@@ -1,6 +1,7 @@
 # ANN
-## Zihao's ANN Code; It has API's which can be readily used
-## Required packages: keras, numpy, scipy, root_numpy, root
+
+Zihao's ANN Code; It has API's which can be readily used
+Required packages: keras, numpy, scipy, root_numpy, ROOT
 
 
 ## Suggested Pakcage Installation Method (Linux)
