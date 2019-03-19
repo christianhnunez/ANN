@@ -11,14 +11,14 @@ install conda, follow instruction closely:
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 chmod 777 Miniconda3-latest-Linux-x86_64.sh
 ./Miniconda3-latest-Linux-x86_64.sh
-```sh
+```
 
 Open a new terminal and create an virtual environment:
 ```sh
 conda create -n myrootenv python=3.7 root -c conda-forge
 conda activate myrootenv
 conda config --env --add channels conda-forge
-```sh
+```
 
 Install all packages under conda:
 ```sh
@@ -34,16 +34,16 @@ pip install root_numpy
 The method has been tested on lxplus. After installation, each time opening a new window, do:
 ```sh
 conda activate myrootenv
-```sh
+```
 
 ## Testing installation (on lxplus)
 ```sh
 python test.py
-```sh
+```
 
 The output should be something like:
 ```sh
 [ 438607.6   159969.81  160083.84 ... 1384873.9  1270115.9  1194152.6 ]
 <keras.layers.core.Dense object at 0x7f3ba6843630>
-```sh
+```
 
