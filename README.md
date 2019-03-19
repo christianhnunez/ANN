@@ -6,7 +6,7 @@ Required packages: keras, numpy, scipy, root_numpy, ROOT
 
 ## Installation Method with conda (Linux, suggested)
 
-install conda, follow instruction closely:
+install conda, follow instruction closely and make sure you have a few GB space available:
 ```sh
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 chmod 777 Miniconda3-latest-Linux-x86_64.sh
