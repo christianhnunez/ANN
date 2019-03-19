@@ -4,43 +4,46 @@ Zihao's ANN Code; It has API's which can be readily used
 Required packages: keras, numpy, scipy, root_numpy, ROOT
 
 
-## Suggested Pakcage Installation Method (Linux)
+## Installation Method with conda (Linux, suggested)
 
-* ROOT installation
-
-follow closely https://root.cern.ch/building-root; Suggested to use ROOT 5.34/36
-
-
-* other package installation
-
-install conda:
-
+install conda, follow instruction closely:
 ```sh
-wget https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh
-chmod +777 Miniconda2-latest-Linux-x86_64.sh
-./Miniconda2-latest-Linux-x86_64.sh
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+chmod 777 Miniconda3-latest-Linux-x86_64.sh
+./Miniconda3-latest-Linux-x86_64.sh
+```sh
+
+Open a new terminal and create an virtual environment:
+```sh
+conda create -n myrootenv python=3.7 root -c conda-forge
+conda activate myrootenv
+conda config --env --add channels conda-forge
+```sh
+
+Install all packages under conda:
+```sh
+pip install numpy
+pip install scipy
+pip install sklearn
+pip install keras
+pip install theano
+pip install tensorflow
+pip install root_numpy
 ```
 
-create an virtual environment
-
+The method has been tested on lxplus. After installation, each time opening a new window, do:
 ```sh
-conda create -n envname python
-```
-
-activate the virtual environment
-
+conda activate myrootenv
 ```sh
-conda activate envname
-```
 
-install packages within the virtual environment (suggested to use python2.7)
-
+## Testing installation (on lxplus)
 ```sh
-python2.7 -m pip install numpy
-python2.7 -m pip install scipy
-python2.7 -m pip install sklearn
-python2.7 -m pip install keras
-python2.7 -m pip install tensorflow
-python2.7 -m pip install root_numpy
-```
+python test.py
+```sh
+
+The output should be something like:
+```sh
+[ 438607.6   159969.81  160083.84 ... 1384873.9  1270115.9  1194152.6 ]
+<keras.layers.core.Dense object at 0x7f3ba6843630>
+```sh
 
