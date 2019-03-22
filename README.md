@@ -47,3 +47,5 @@ The output should be something like:
 <keras.layers.core.Dense object at 0x7f3ba6843630>
 ```
 
+If the test fails complaining errors about tensorflow, try to switch from tensorflow to theano by changing the backend in the keras.json file
+https://keras.io/backend/#switching-from-one-backend-to-another
