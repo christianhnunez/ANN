@@ -29,6 +29,8 @@ pip install keras
 pip install theano
 pip install tensorflow
 pip install root_numpy
+pip install rootpy
+pip install matplotlib
 ```
 
 The method has been tested on lxplus. After installation, each time opening a new window, do:
