@@ -140,7 +140,14 @@ MVA_test_array   = MVA_test_array[test_index_perm,:]
 # Making smaller samples just for testing:
 print("Current MVA_train_array size = " + str(len(MVA_train_array)))
 print("Current MVA_test_array size = " + str(len(MVA_test_array)))
-
+print("Taking 5 percent of each...")
+# Stopper index:
+train_stop = len(MVA_train_array)*0.05
+test_stop = len(MVA_test_array)*0.05
+MVA_train_array = MVA_train_array[:train_stop]
+MVA_test_array = MVA_test_array[:test_stop]
+print("New MVA_train_array size = " + str(len(MVA_train_array)))
+print("New MVA_test_array size = " + str(len(MVA_test_array)))
 
 #########
 ## BDT ##
