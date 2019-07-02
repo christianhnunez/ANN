@@ -394,7 +394,7 @@ for lamb in [0, 1.0]:
     miniROC["rho_test"] = test_mass_score_corr
 
     # Add mini to mega:
-    miniName = "lamb" + lamb
+    miniName = "lamb" + str(lamb)
     megaROC[miniName] = miniROC
 
 
