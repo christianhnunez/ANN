@@ -170,6 +170,11 @@ plt.close()
 
 
 ## plot Mbb profile plot
+# ===
+# TRAIN
+# ===
+
+# Background only
 means_result = binned_statistic(MVA_train_array[:, 2][MVA_train_array[:,0]==0], 
                                 [bdt_results["pred_train"][MVA_train_array[:,0]==0], 
                                  bdt_results["pred_train"][MVA_train_array[:,0]==0]**2], 
@@ -178,11 +183,33 @@ means, means2 = means_result.statistic
 standard_deviations = np.sqrt(means2 - means**2)
 bin_edges = means_result.bin_edges
 bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
-plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='.')
+plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=10, alpha=0.7, label="bkg", solid_capstyle='projecting', capsize=9)
+
+# Signal only
+means_result = binned_statistic(MVA_train_array[:, 2][MVA_train_array[:,0]==1], 
+                                [bdt_results["pred_train"][MVA_train_array[:,0]==1], 
+                                 bdt_results["pred_train"][MVA_train_array[:,0]==1]**2], 
+                                bins=10, range=[mass_range_low, mass_range_high], statistic='mean')
+means, means2 = means_result.statistic
+standard_deviations = np.sqrt(means2 - means**2)
+bin_edges = means_result.bin_edges
+bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
+plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=10, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=9)
+
+# Show
+plt.ylabel("Score")
+plt.xlabel("Mbb (GeV)")
+plt.grid()
+plt.legend(fancybox=True)
+plt.show()
 plt.savefig("profile_bdt_train_mass.png")
 plt.close()
 
 
+# === 
+# TEST
+# ===
+# BKG only
 means_result = binned_statistic(MVA_test_array[:, 2][MVA_test_array[:,0]==0], 
                                 [bdt_results["pred_test"][MVA_test_array[:,0]==0], 
                                  bdt_results["pred_test"][MVA_test_array[:,0]==0]**2], 
@@ -191,7 +218,25 @@ means, means2 = means_result.statistic
 standard_deviations = np.sqrt(means2 - means**2)
 bin_edges = means_result.bin_edges
 bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
-plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='.')
+plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=10, alpha=0.7, label="bkg", solid_capstyle='projecting', capsize=9)
+
+# Signal only
+means_result = binned_statistic(MVA_test_array[:, 2][MVA_test_array[:,0]==1], 
+                                [bdt_results["pred_test"][MVA_test_array[:,0]==1], 
+                                 bdt_results["pred_test"][MVA_test_array[:,0]==1]**2], 
+                                bins=10, range=[mass_range_low, mass_range_high], statistic='mean')
+means, means2 = means_result.statistic
+standard_deviations = np.sqrt(means2 - means**2)
+bin_edges = means_result.bin_edges
+bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
+plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=10, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=9)
+
+# Show
+plt.ylabel("Score")
+plt.xlabel("Mbb (GeV)")
+plt.grid()
+plt.legend(fancybox=True)
+plt.show()
 plt.savefig("profile_bdt_test_mass.png")
 plt.close()
 
@@ -223,6 +268,10 @@ ann_dataset["weights_train"] = MVA_train_array[:, 1]
 ann_dataset["weights_test"]  = MVA_test_array[:, 1]
 
 
+# For the megaROC curve, which combines the results of the ROC curves of the all lambdas tested
+# Format example for lambda=10: megaROC['lamb10'] = miniROC
+# where miniROC has keys "lamb" (for check), "ann_results", "rho_train", "rho_test"
+megaROC = {}
 for lamb in [0, 1.0, 2.0, 5.0, 10.0]:
 
     model, hist = TrainANN( ann_dataset, lamb=lamb, clpretrain = 20, adpretrain = 10, 
@@ -259,7 +308,11 @@ for lamb in [0, 1.0, 2.0, 5.0, 10.0]:
     plt.savefig("roc_ann_lambda{!s}.png".format(str(lamb)))
     plt.close()
 
-    ## plot Mbb profile plot
+    # ================================================
+    # Plotting Mbb profile plot, separated sig/bkg
+    # ================================================
+    # TRAIN ->
+    # Background only
     means_result = binned_statistic(MVA_train_array[:, 2][MVA_train_array[:,0]==0], 
                                     [ann_results["pred_train"][MVA_train_array[:,0]==0], 
                                      ann_results["pred_train"][MVA_train_array[:,0]==0]**2], 
@@ -268,19 +321,97 @@ for lamb in [0, 1.0, 2.0, 5.0, 10.0]:
     standard_deviations = np.sqrt(means2 - means**2)
     bin_edges = means_result.bin_edges
     bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
-    plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='.')
-    plt.savefig("profile_ann_train_mass_lambda{!s}.png".format(str(lamb)))
-    plt.close()
+    plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=10, alpha=0.7, label="bkg", solid_capstyle='projecting', capsize=9)
 
-
-    means_result = binned_statistic(MVA_test_array[:, 2][MVA_test_array[:,0]==0], 
-                                    [ann_results["pred_test"][MVA_test_array[:,0]==0], 
-                                     ann_results["pred_test"][MVA_test_array[:,0]==0]**2], 
+    # Signal only
+    means_result = binned_statistic(MVA_train_array[:, 2][MVA_train_array[:,0]==1], 
+                                    [ann_results["pred_train"][ann_train_array[:,0]==1], 
+                                     ann_results["pred_train"][MVA_train_array[:,0]==1]**2], 
                                     bins=10, range=[mass_range_low, mass_range_high], statistic='mean')
     means, means2 = means_result.statistic
     standard_deviations = np.sqrt(means2 - means**2)
     bin_edges = means_result.bin_edges
     bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
-    plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='.')
+    plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=10, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=9)
+
+    # Show
+    plt.ylabel("Score")
+    plt.xlabel("Mbb (GeV)")
+    plt.grid()
+    plt.legend(fancybox=True)
+    plt.savefig("profile_ann_train_mass_lambda{!s}.png".format(str(lamb)))
+    plt.close()
+
+
+    # TEST -->
+    # Background only
+    means_result = binned_statistic(MVA_train_array[:, 2][MVA_train_array[:,0]==0], 
+                                    [ann_results["pred_test"][MVA_train_array[:,0]==0], 
+                                     ann_results["pred_test"][MVA_train_array[:,0]==0]**2], 
+                                    bins=10, range=[mass_range_low, mass_range_high], statistic='mean')
+    means, means2 = means_result.statistic
+    standard_deviations = np.sqrt(means2 - means**2)
+    bin_edges = means_result.bin_edges
+    bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
+    plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=10, alpha=0.7, label="bkg", solid_capstyle='projecting', capsize=9)
+
+    # Signal only
+    means_result = binned_statistic(MVA_train_array[:, 2][MVA_train_array[:,0]==1], 
+                                    [ann_results["pred_test"][ann_train_array[:,0]==1], 
+                                     ann_results["pred_test"][MVA_train_array[:,0]==1]**2], 
+                                    bins=10, range=[mass_range_low, mass_range_high], statistic='mean')
+    means, means2 = means_result.statistic
+    standard_deviations = np.sqrt(means2 - means**2)
+    bin_edges = means_result.bin_edges
+    bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
+    plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=10, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=9)
+
+    # Show
+    plt.ylabel("Score")
+    plt.xlabel("Mbb (GeV)")
+    plt.grid()
+    plt.legend(fancybox=True)
     plt.savefig("profile_ann_test_mass_lambda{!s}.png".format(str(lamb)))
     plt.close()
+
+    # ========== #
+    # Compiling data for the megaROC curve, combining the results of the ROC curves of the all lambdas tested
+    miniROC = {}
+    miniROC["lamb"] = lamb
+    miniROC["ann_results"] = ann_results
+    miniROC["rho_train"] = train_mass_score_corr
+    miniROC["rho_test"] = test_mass_score_corr
+
+    # Add mini to mega:
+    miniName = "lamb" + lamb
+    megaROC[miniName] = miniROC
+
+
+# Finally, create the megaROC curve. Test with just the test data.
+plt.figure()
+for key in megaROC.keys():
+    # Retrieve data from mega->mini
+    ann_results = megaROC[key]["ann_results"]
+    test_mass_score_corr = megaROC[key]["rho_test"]
+    lamb = megaROC[key]["lamb"]
+    # Create plot
+    legendName = "lamb = " + key.split("lamb")[1]
+    plt.plot(  ann_results["roc_test"][1],  ann_results["roc_test"][0], 
+               label= legendName + "roc test set, AUC="+str(ann_results["auc_test"])+ " rho(mass,score)="+str(test_mass_score_corr))
+plt.legend(fancybox=True)
+plt.xlabel("Signal Efficiency")
+plt.ylabel("Background Efficiency")
+plt.savefig("roc_ann_HPsearch".format(str(lamb)))
+plt.close()
+
+
+
+
+
+
+
+
+
+
+
+
