@@ -138,11 +138,11 @@ MVA_train_array  = MVA_train_array[train_index_perm,:]
 MVA_test_array   = MVA_test_array[test_index_perm,:]
 
 
-print("\n\n FOR TESTING: Taking only 1 percent of train and test. \n\n")
-MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.01)]
-MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.01)]
-print("MVA_train_array length = " + str(MVA_train_array.shape[0]))
-print("MVA_test_array length = " + str(MVA_test_array.shape[0]))
+#print("\n\n FOR TESTING: Taking only 1 percent of train and test. \n\n")
+#MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.01)]
+#MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.01)]
+#print("MVA_train_array length = " + str(MVA_train_array.shape[0]))
+#print("MVA_test_array length = " + str(MVA_test_array.shape[0]))
 
 #########
 ## BDT ##
@@ -410,15 +410,13 @@ for key in megaROC.keys():
     # Create plot
     legendName = "lamb = " + key.split("lamb")[1]
     plt.plot(  ann_results["roc_test"][1],  ann_results["roc_test"][0], 
-               label= legendName + "| roc test set, AUC="+str(ann_results["auc_test"])+ " rho(mass,score)="+str(test_mass_score_corr), alpha=0.7, color=cols[count])
+               label= legendName + " | roc test set, AUC="+str(ann_results["auc_test"])+ " rho(mass,score)="+str(test_mass_score_corr), alpha=0.7, color=cols[count])
     count = count + 1
 plt.legend(fancybox=True)
 plt.xlabel("Signal Efficiency")
 plt.ylabel("Background Efficiency")
 plt.savefig("roc_ann_HPsearch".format(str(lamb)))
 plt.close()
-
-
 
 
 
