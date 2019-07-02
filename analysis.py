@@ -400,7 +400,9 @@ for lamb in [0, 1.0]:
 
 # Finally, create the megaROC curve. Test with just the test data.
 plt.figure()
+count = 0
 for key in megaROC.keys():
+    cols = ['r', 'b', 'g', 'pink', 'teal']
     # Retrieve data from mega->mini
     ann_results = megaROC[key]["ann_results"]
     test_mass_score_corr = megaROC[key]["rho_test"]
@@ -408,7 +410,8 @@ for key in megaROC.keys():
     # Create plot
     legendName = "lamb = " + key.split("lamb")[1]
     plt.plot(  ann_results["roc_test"][1],  ann_results["roc_test"][0], 
-               label= legendName + "roc test set, AUC="+str(ann_results["auc_test"])+ " rho(mass,score)="+str(test_mass_score_corr), alpha=0.7)
+               label= legendName + "| roc test set, AUC="+str(ann_results["auc_test"])+ " rho(mass,score)="+str(test_mass_score_corr), alpha=0.7, color=cols[count])
+    count = count + 1
 plt.legend(fancybox=True)
 plt.xlabel("Signal Efficiency")
 plt.ylabel("Background Efficiency")
