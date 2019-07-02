@@ -284,7 +284,7 @@ ann_dataset["weights_test"]  = MVA_test_array[:, 1]
 megaROC = {}
 #for lamb in [0, 1.0, 2.0, 5.0, 10.0]:
 for lamb in [0, 1.0]:
-    
+
     model, hist = TrainANN( ann_dataset, lamb=lamb, clpretrain = 20, adpretrain = 10, 
                             epoch=50,  batch_size = 256 , nMBBbins = 10)
 
@@ -336,7 +336,7 @@ for lamb in [0, 1.0]:
 
     # Signal only
     means_result = binned_statistic(MVA_train_array[:, 2][MVA_train_array[:,0]==1], 
-                                    [ann_results["pred_train"][ann_train_array[:,0]==1], 
+                                    [ann_results["pred_train"][MVA_train_array[:,0]==1], 
                                      ann_results["pred_train"][MVA_train_array[:,0]==1]**2], 
                                     bins=10, range=[mass_range_low, mass_range_high], statistic='mean')
     means, means2 = means_result.statistic
@@ -368,7 +368,7 @@ for lamb in [0, 1.0]:
 
     # Signal only
     means_result = binned_statistic(MVA_train_array[:, 2][MVA_train_array[:,0]==1], 
-                                    [ann_results["pred_test"][ann_train_array[:,0]==1], 
+                                    [ann_results["pred_test"][MVA_train_array[:,0]==1], 
                                      ann_results["pred_test"][MVA_train_array[:,0]==1]**2], 
                                     bins=10, range=[mass_range_low, mass_range_high], statistic='mean')
     means, means2 = means_result.statistic
