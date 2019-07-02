@@ -356,9 +356,9 @@ for lamb in [0, 1.0]:
 
     # TEST -->
     # Background only
-    means_result = binned_statistic(MVA_train_array[:, 2][MVA_train_array[:,0]==0], 
-                                    [ann_results["pred_test"][MVA_train_array[:,0]==0], 
-                                     ann_results["pred_test"][MVA_train_array[:,0]==0]**2], 
+    means_result = binned_statistic(MVA_test_array[:, 2][MVA_test_array[:,0]==0], 
+                                    [ann_results["pred_test"][MVA_test_array[:,0]==0], 
+                                     ann_results["pred_test"][MVA_test_array[:,0]==0]**2], 
                                     bins=10, range=[mass_range_low, mass_range_high], statistic='mean')
     means, means2 = means_result.statistic
     standard_deviations = np.sqrt(means2 - means**2)
@@ -367,9 +367,9 @@ for lamb in [0, 1.0]:
     plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="bkg", solid_capstyle='projecting', capsize=4)
 
     # Signal only
-    means_result = binned_statistic(MVA_train_array[:, 2][MVA_train_array[:,0]==1], 
-                                    [ann_results["pred_test"][MVA_train_array[:,0]==1], 
-                                     ann_results["pred_test"][MVA_train_array[:,0]==1]**2], 
+    means_result = binned_statistic(MVA_test_array[:, 2][MVA_test_array[:,0]==1], 
+                                    [ann_results["pred_test"][MVA_test_array[:,0]==1], 
+                                     ann_results["pred_test"][MVA_test_array[:,0]==1]**2], 
                                     bins=10, range=[mass_range_low, mass_range_high], statistic='mean')
     means, means2 = means_result.statistic
     standard_deviations = np.sqrt(means2 - means**2)
