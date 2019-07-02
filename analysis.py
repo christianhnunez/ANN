@@ -193,7 +193,7 @@ means, means2 = means_result.statistic
 standard_deviations = np.sqrt(means2 - means**2)
 bin_edges = means_result.bin_edges
 bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
-plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=10, alpha=0.7, label="bkg", solid_capstyle='projecting', capsize=9)
+plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="bkg", solid_capstyle='projecting', capsize=4)
 
 # Signal only
 means_result = binned_statistic(MVA_train_array[:, 2][MVA_train_array[:,0]==1], 
@@ -204,7 +204,7 @@ means, means2 = means_result.statistic
 standard_deviations = np.sqrt(means2 - means**2)
 bin_edges = means_result.bin_edges
 bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
-plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=10, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=9)
+plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=4)
 
 # Show
 plt.ylabel("Score")
@@ -228,7 +228,7 @@ means, means2 = means_result.statistic
 standard_deviations = np.sqrt(means2 - means**2)
 bin_edges = means_result.bin_edges
 bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
-plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=10, alpha=0.7, label="bkg", solid_capstyle='projecting', capsize=9)
+plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="bkg", solid_capstyle='projecting', capsize=4)
 
 # Signal only
 means_result = binned_statistic(MVA_test_array[:, 2][MVA_test_array[:,0]==1], 
@@ -239,7 +239,7 @@ means, means2 = means_result.statistic
 standard_deviations = np.sqrt(means2 - means**2)
 bin_edges = means_result.bin_edges
 bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
-plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=10, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=9)
+plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=4)
 
 # Show
 plt.ylabel("Score")
@@ -332,7 +332,7 @@ for lamb in [0, 1.0]:
     standard_deviations = np.sqrt(means2 - means**2)
     bin_edges = means_result.bin_edges
     bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
-    plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=10, alpha=0.7, label="bkg", solid_capstyle='projecting', capsize=9)
+    plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="bkg", solid_capstyle='projecting', capsize=4)
 
     # Signal only
     means_result = binned_statistic(MVA_train_array[:, 2][MVA_train_array[:,0]==1], 
@@ -343,7 +343,7 @@ for lamb in [0, 1.0]:
     standard_deviations = np.sqrt(means2 - means**2)
     bin_edges = means_result.bin_edges
     bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
-    plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=10, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=9)
+    plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=4)
 
     # Show
     plt.ylabel("Score")
@@ -364,7 +364,7 @@ for lamb in [0, 1.0]:
     standard_deviations = np.sqrt(means2 - means**2)
     bin_edges = means_result.bin_edges
     bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
-    plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=10, alpha=0.7, label="bkg", solid_capstyle='projecting', capsize=9)
+    plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="bkg", solid_capstyle='projecting', capsize=4)
 
     # Signal only
     means_result = binned_statistic(MVA_train_array[:, 2][MVA_train_array[:,0]==1], 
@@ -375,7 +375,7 @@ for lamb in [0, 1.0]:
     standard_deviations = np.sqrt(means2 - means**2)
     bin_edges = means_result.bin_edges
     bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
-    plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=10, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=9)
+    plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=4)
 
     # Show
     plt.ylabel("Score")
@@ -408,7 +408,7 @@ for key in megaROC.keys():
     # Create plot
     legendName = "lamb = " + key.split("lamb")[1]
     plt.plot(  ann_results["roc_test"][1],  ann_results["roc_test"][0], 
-               label= legendName + "roc test set, AUC="+str(ann_results["auc_test"])+ " rho(mass,score)="+str(test_mass_score_corr))
+               label= legendName + "roc test set, AUC="+str(ann_results["auc_test"])+ " rho(mass,score)="+str(test_mass_score_corr), alpha=0.7)
 plt.legend(fancybox=True)
 plt.xlabel("Signal Efficiency")
 plt.ylabel("Background Efficiency")
