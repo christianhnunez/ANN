@@ -131,23 +131,13 @@ MVA_train_array = np.concatenate( (MVAInputs["sherpa"][:, 0:int(n_bkg*train_frac
 MVA_test_array  = np.concatenate( (MVAInputs["sherpa"][:, int(n_bkg*train_frac):], MVAInputs["vbf"][:, int(n_sig*train_frac):] ), axis =1).T
 
 # random permute the training and testing set orders
+
+print("\n\n FOR TESTING: Taking only 5 percent of train and test. \n\n")
 np.random.seed(10)
-train_index_perm = np.random.permutation( np.array(range(MVA_train_array.shape[0])) )
-test_index_perm  = np.random.permutation( np.array(range(MVA_test_array.shape[0])) )
+train_index_perm = np.random.permutation( np.array(range(int(MVA_train_array.shape[0]*.05))) )
+test_index_perm  = np.random.permutation( np.array(range(int(MVA_test_array.shape[0]*.05))) )
 MVA_train_array  = MVA_train_array[train_index_perm,:]
 MVA_test_array   = MVA_test_array[test_index_perm,:]
-
-# Making smaller samples just for testing:
-print("Current MVA_train_array size = " + str(len(MVA_train_array)))
-print("Current MVA_test_array size = " + str(len(MVA_test_array)))
-print("Taking 5 percent of each...")
-# Stopper index:
-train_stop = len(MVA_train_array)*0.05
-test_stop = len(MVA_test_array)*0.05
-MVA_train_array = MVA_train_array[:train_stop]
-MVA_test_array = MVA_test_array[:test_stop]
-print("New MVA_train_array size = " + str(len(MVA_train_array)))
-print("New MVA_test_array size = " + str(len(MVA_test_array)))
 
 #########
 ## BDT ##
