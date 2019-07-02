@@ -131,13 +131,18 @@ MVA_train_array = np.concatenate( (MVAInputs["sherpa"][:, 0:int(n_bkg*train_frac
 MVA_test_array  = np.concatenate( (MVAInputs["sherpa"][:, int(n_bkg*train_frac):], MVAInputs["vbf"][:, int(n_sig*train_frac):] ), axis =1).T
 
 # random permute the training and testing set orders
-
-print("\n\n FOR TESTING: Taking only 5 percent of train and test. \n\n")
 np.random.seed(10)
-train_index_perm = np.random.permutation( np.array(range(int(MVA_train_array.shape[0]*.05))) )
-test_index_perm  = np.random.permutation( np.array(range(int(MVA_test_array.shape[0]*.05))) )
+train_index_perm = np.random.permutation( np.array(range(MVA_train_array.shape[0])) )
+test_index_perm  = np.random.permutation( np.array(range(MVA_test_array.shape[0])) )
 MVA_train_array  = MVA_train_array[train_index_perm,:]
 MVA_test_array   = MVA_test_array[test_index_perm,:]
+
+
+print("\n\n FOR TESTING: Taking only 5 percent of train and test. \n\n")
+MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.05)]
+MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.05)]
+print("MVA_train_array length = " + str(MVA_train_array.shape[0]))
+print("MVA_test_array length = " + str(MVA_test_array.shape[0]))
 
 #########
 ## BDT ##
