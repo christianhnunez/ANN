@@ -27,8 +27,11 @@ var_all = var_bb+var_ANN
 
 ## create physics process
 SAMPLES = {}
-SAMPLES["sherpa"] = PhysicsProcess("Sherpa Multi-b", "/eos/atlas/user/m/maklein/vbfhbb_mvainputs/cen2/tree_2central_sherpamj_de.root")
-SAMPLES["vbf"]    = PhysicsProcess("VBF H->bb",      "/eos/atlas/user/m/maklein/vbfhbb_mvainputs/cen2/tree_2central_vbf_de.root")
+SAMPLES["sherpa"] = PhysicsProcess("Sherpa Multi-b", "/eos/atlas/user/m/maklein/vbfhbb_mvainputs/1for2cen_loose/tree_mcmj_d.root")
+SAMPLES["vbf"]    = PhysicsProcess("VBF H->bb",      "/eos/atlas/user/m/maklein/vbfhbb_mvainputs/1for2cen_loose/tree_vbf_ade.root")
+# Old root files
+#SAMPLES["sherpa"] = PhysicsProcess("Sherpa Multi-b", "/eos/atlas/user/m/maklein/vbfhbb_mvainputs/cen2/tree_2central_sherpamj_de.root")
+#SAMPLES["vbf"]    = PhysicsProcess("VBF H->bb",      "/eos/atlas/user/m/maklein/vbfhbb_mvainputs/cen2/tree_2central_vbf_de.root")
 #SAMPLES["data"]   = PhysicsProcess("data",           "/eos/atlas/user/m/maklein/vbfhbb_mvainputs/cen2/tree_2central_201718.root")
 
 ## load all varibles
@@ -133,6 +136,11 @@ train_index_perm = np.random.permutation( np.array(range(MVA_train_array.shape[0
 test_index_perm  = np.random.permutation( np.array(range(MVA_test_array.shape[0])) )
 MVA_train_array  = MVA_train_array[train_index_perm,:]
 MVA_test_array   = MVA_test_array[test_index_perm,:]
+
+# Making smaller samples just for testing:
+print "Current MVA_train_array size = " + str(len(MVA_train_array))
+print "Current MVA_test_array size = " + str(len(MVA_test_array))
+
 
 #########
 ## BDT ##
