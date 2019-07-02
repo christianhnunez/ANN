@@ -138,8 +138,8 @@ MVA_train_array  = MVA_train_array[train_index_perm,:]
 MVA_test_array   = MVA_test_array[test_index_perm,:]
 
 # Making smaller samples just for testing:
-print "Current MVA_train_array size = " + str(len(MVA_train_array))
-print "Current MVA_test_array size = " + str(len(MVA_test_array))
+print("Current MVA_train_array size = " + str(len(MVA_train_array)))
+print("Current MVA_test_array size = " + str(len(MVA_test_array)))
 
 
 #########
