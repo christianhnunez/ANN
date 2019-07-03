@@ -138,11 +138,11 @@ MVA_train_array  = MVA_train_array[train_index_perm,:]
 MVA_test_array   = MVA_test_array[test_index_perm,:]
 
 
-print("\n\n FOR TESTING: Taking only 5 percent of train and test. \n\n")
-MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.05)]
-MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.05)]
-print("MVA_train_array length = " + str(MVA_train_array.shape[0]))
-print("MVA_test_array length = " + str(MVA_test_array.shape[0]))
+# print("\n\n FOR TESTING: Taking only 5 percent of train and test. \n\n")
+# MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.05)]
+# MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.05)]
+# print("MVA_train_array length = " + str(MVA_train_array.shape[0]))
+# print("MVA_test_array length = " + str(MVA_test_array.shape[0]))
 
 #########
 ## BDT ##
@@ -282,8 +282,7 @@ ann_dataset["weights_test"]  = MVA_test_array[:, 1]
 # Format example for lambda=10: megaROC['lamb10'] = miniROC
 # where miniROC has keys "lamb" (for check), "ann_results", "rho_train", "rho_test"
 megaROC = {}
-#for lamb in [0, 1.0, 2.0, 5.0, 10.0]:
-for lamb in [2.0, 10.0]:
+for lamb in [0, 1.0, 5.0, 10.0]:
 
     model, hist = TrainANN( ann_dataset, lamb=lamb, clpretrain = 20, adpretrain = 10, 
                             epoch=50,  batch_size = 256 , nMBBbins = 10)
@@ -346,6 +345,7 @@ for lamb in [2.0, 10.0]:
     plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=4)
 
     # Show
+    plt.set_title("profile_ann_train_mass_lambda{!s}.png".format(str(lamb)))
     plt.ylabel("Score")
     plt.xlabel("Mbb (GeV)")
     plt.grid()
@@ -378,6 +378,7 @@ for lamb in [2.0, 10.0]:
     plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=4)
 
     # Show
+    plt.set_title("profile_ann_test_mass_lambda{!s}.png".format(str(lamb)))
     plt.ylabel("Score")
     plt.xlabel("Mbb (GeV)")
     plt.grid()
