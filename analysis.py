@@ -345,7 +345,6 @@ for lamb in [0, 1.0, 5.0, 10.0]:
     plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=4)
 
     # Show
-    plt.set_title("profile_ann_train_mass_lambda{!s}.png".format(str(lamb)))
     plt.ylabel("Score")
     plt.xlabel("Mbb (GeV)")
     plt.grid()
@@ -378,7 +377,6 @@ for lamb in [0, 1.0, 5.0, 10.0]:
     plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=4)
 
     # Show
-    plt.set_title("profile_ann_test_mass_lambda{!s}.png".format(str(lamb)))
     plt.ylabel("Score")
     plt.xlabel("Mbb (GeV)")
     plt.grid()
