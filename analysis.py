@@ -334,9 +334,9 @@ def save_ANN_dataset(filename, treename, ann_dataset, train):
 
     # Fill the tree
     for i in range(len(ann_dataset[names[0]])):
-        X_f = ann_dataset[names[0]][i]
-        Y_f = ann_dataset[names[1]][i]
-        weights_f = ann_dataset[names[2]][i]
+        X_f[0] = ann_dataset[names[0]][i]
+        Y_f[0] = ann_dataset[names[1]][i]
+        weights_f[0] = ann_dataset[names[2]][i]
         t.Fill()
     
     # Write and close file
