@@ -17,7 +17,7 @@ logging.getLogger('matplotlib.pyplot').setLevel(logging.WARNING)
 logging.getLogger('matplotlib').setLevel(logging.WARNING) 
 
 # Filename for data storage
-filename = "analysis_results"
+filename = "analysis_results.root"
 f = TFile(filename, "recreate")
 f.Close()
 
