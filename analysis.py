@@ -328,15 +328,15 @@ def save_ANN_dataset(filename, treename, ann_dataset, train):
     weights_f = np.zeros(1, dtype=np.float64)
 
     # Create all branches
-    t.Branch(names[0], X_f, names[0]+"X_train/D")
+    #t.Branch(names[0], X_f, names[0]+"X_train/D")
     t.Branch(names[1], Y_f, names[1]+"Y_train/D")
-    t.Branch(names[2], weights_f, names[2]+"/D")
+    #t.Branch(names[2], weights_f, names[2]+"/D")
 
     # Fill the tree
     for i in range(len(ann_dataset[names[0]])):
-        X_f[0] = ann_dataset[names[0]][i]
+        #X_f[0] = ann_dataset[names[0]][i]
         Y_f[0] = ann_dataset[names[1]][i]
-        weights_f[0] = ann_dataset[names[2]][i]
+        #weights_f[0] = ann_dataset[names[2]][i]
         t.Fill()
     
     # Write and close file
