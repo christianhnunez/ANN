@@ -1,5 +1,6 @@
 from ANN import TrainANN, predictANN
 import ROOT
+from ROOT import TFile, TTree
 import root_numpy as rnp
 from keras.layers.core import Dense, Dropout, Activation
 from HistoLib import HistoTool, PhysicsProcess, Cut, Make1DPlots, DrawPlotsWithCutsForEachSample, mBB_Binning_long
@@ -15,6 +16,10 @@ import logging
 logging.getLogger('matplotlib.pyplot').setLevel(logging.WARNING) 
 logging.getLogger('matplotlib').setLevel(logging.WARNING) 
 
+# Filename for data storage
+filename = "analysis_results"
+f = TFile(filename, "recreate")
+f.Close()
 
 ## declare event variables of interests
 var_bb  = ["mBB", "pTBB", "eventWeight"]
@@ -136,6 +141,36 @@ train_index_perm = np.random.permutation( np.array(range(MVA_train_array.shape[0
 test_index_perm  = np.random.permutation( np.array(range(MVA_test_array.shape[0])) )
 MVA_train_array  = MVA_train_array[train_index_perm,:]
 MVA_test_array   = MVA_test_array[test_index_perm,:]
+
+def save_MVA_array(filename, treename, MVA_array, bnames):
+    f = TFile(filename, "update")
+    t = TTree(treename, "MVA_array")
+
+    # Fill variables in order of MVA_test_array inputs (see bnames for list)
+    fill_vars = []
+    for i in range(MVA_array.shape[1]):
+        fill_vars.append(np.zeros(1, dtype=np.float64))
+
+    # Create all branches
+    for i in range(MVA_array.shape[1]):
+        t.Branch(bnames[i], fill_vars[i], bnames[i]+"/D")
+
+    # Fill the tree
+    # Outer loop: over all events (inputs)
+    for i in range(MVA_array.shape[0]):
+        # Inner loop: over all input vars (label, eventWeight, etc.)
+        for j in range(len(fill_vars)):
+            fill_vars[j][0] = np.array(MVA_array[i, j])
+        t.Fill()
+    
+    # Write and close file
+    f.Write()
+    f.Close()
+
+# Save the MVA arrays for train and test
+branch_names = ["label", "eventWeight", "mBB"] + var_ANN
+save_MVA_array(filename, "MVA_train_array", MVA_train_array, branch_names)
+save_MVA_array(filename, "MVA_test_array", MVA_train_array, branch_names)
 
 
 print("\n\n FOR TESTING: Taking only 5 percent of train and test. \n\n")
