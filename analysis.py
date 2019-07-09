@@ -142,6 +142,14 @@ test_index_perm  = np.random.permutation( np.array(range(MVA_test_array.shape[0]
 MVA_train_array  = MVA_train_array[train_index_perm,:]
 MVA_test_array   = MVA_test_array[test_index_perm,:]
 
+print("\n\n FOR TESTING: Taking only 5 percent of train and test. \n\n")
+MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.05)]
+MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.05)]
+print("MVA_train_array length = " + str(MVA_train_array.shape[0]))
+print("MVA_test_array length = " + str(MVA_test_array.shape[0]))
+
+
+# UPDATE: Move this function to utils.
 def save_MVA_array(filename, treename, MVA_array, bnames):
     f = TFile(filename, "update")
     t = TTree(treename, "MVA_array")
@@ -171,13 +179,6 @@ def save_MVA_array(filename, treename, MVA_array, bnames):
 branch_names = ["label", "eventWeight", "mBB"] + var_ANN
 save_MVA_array(filename, "MVA_train_array", MVA_train_array, branch_names)
 save_MVA_array(filename, "MVA_test_array", MVA_train_array, branch_names)
-
-
-print("\n\n FOR TESTING: Taking only 5 percent of train and test. \n\n")
-MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.05)]
-MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.05)]
-print("MVA_train_array length = " + str(MVA_train_array.shape[0]))
-print("MVA_test_array length = " + str(MVA_test_array.shape[0]))
 
 #########
 ## BDT ##
@@ -310,6 +311,40 @@ ann_dataset["Y_test"]        = np.hstack( (mass_cat_test,  MVA_test_array[:, [0]
 ann_dataset["weights_train"] = MVA_train_array[:, 1]
 ann_dataset["weights_test"]  = MVA_test_array[:, 1]
 
+# Save the ANN dataset:
+def save_ANN_dataset(filename, treename, ann_dataset, train):
+    names = []
+    if train:
+        names = ["X_train", "Y_train", "weights_train"]
+    else: 
+        names = ["X_test", "Y_test", "weights_test"]
+
+    f = TFile(filename, "update")
+    t = TTree(treename, "ann_dataset")
+
+    # Fill variables
+    X_f      = np.zeros(1, dtype=np.float64)
+    Y_f     = np.zeros(1, dtype=np.float64)
+    weights_f = np.zeros(1, dtype=np.float64)
+
+    # Create all branches
+    t.Branch(names[0], X_f, names[0]+"X_train/D")
+    t.Branch(names[1], Y_f, names[1]+"Y_train/D")
+    t.Branch(names[2], weights_f, names[2]+"/D")
+
+    # Fill the tree
+    for i in range(len(ann_dataset[names[0]])):
+        X_f = ann_dataset[names[0]][i]
+        Y_f = ann_dataset[names[1]][i]
+        weights_f = ann_dataset[names[2]][i]
+        t.Fill()
+    
+    # Write and close file
+    f.Write()
+    f.Close()
+
+save_ANN_dataset(filename, "ann_dataset_train", ann_dataset, train=True)
+save_ANN_dataset(filename, "ann_dataset_test", ann_dataset, train=False)
 
 # For the megaROC curve, which combines the results of the ROC curves of the all lambdas tested
 # Format example for lambda=10: megaROC['lamb10'] = miniROC
