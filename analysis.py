@@ -522,8 +522,8 @@ for lamb in [10.0]:
         f.Write()
         f.Close()
 
-    save_ANN_predictions(filename, "ann_results_"+name+"_lamb"+str(lamb), ann_results, train=True)
-    save_ANN_predictions(filename, "ann_results_"+name+"_lamb"+str(lamb), ann_results, train=False)
+    save_ANN_predictions(filename, "ann_results_pred_train"+"_lamb"+str(lamb), ann_results, train=True)
+    save_ANN_predictions(filename, "ann_results_pred_test"+"_lamb"+str(lamb), ann_results, train=False)
 
 
 
