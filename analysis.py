@@ -506,29 +506,24 @@ for lamb in [10.0]:
         t = TTree(treename, "ann_dataset")
 
         # Fill variables
-        fill_vars = []
         print("\n\n\n ann_results[name] SHAPE: ", ann_results[name].shape)
-        for i in range(ann_results[name].shape[1]):
-            fill_vars.append(np.zeros(1, dtype=np.float64))
+        pred_f = np.zeros(1, dtype=np.float64)
 
-        # Create all branches
-        for j in range(ann_results[name].shape[1]):
-            t.Branch("bin"+str(j), fill_vars[j], "bin"+str(j)+"/D")
+        # Create branches
+        t.Branch(name, pred_f, name+"/D")
 
         # Fill the tree
         # Outer loop: over all events (inputs)
         for i in range(ann_results[name].shape[0]):
-            # Inner loop: over all input vars
-            for j in range(len(fill_vars)):
-                fill_vars[j][0] = (ann_results[name])[i,j]
+            pred_f[0] = ann_results[name][i]
             t.Fill()
         
         # Write and close file
         f.Write()
         f.Close()
 
-    save_ANN_predictions(filename, "ann_results_pred_train_lamb"+str(lamb), ann_results, train=True)
-    save_ANN_predictions(filename, "ann_results_pred_test_lamb"+str(lamb), ann_results, train=False)
+    save_ANN_predictions(filename, "ann_results_"+name+"_lamb"+str(lamb), ann_results, train=True)
+    save_ANN_predictions(filename, "ann_results_"+name+"_lamb"+str(lamb), ann_results, train=False)
 
 
 
