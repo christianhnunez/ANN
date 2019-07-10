@@ -376,10 +376,6 @@ def save_ANN_dataset(filename, treename, ann_dataset, train):
 save_ANN_dataset(filename, "ann_dataset_train", ann_dataset, train=True)
 save_ANN_dataset(filename, "ann_dataset_test", ann_dataset, train=False)
 
-import sys
-sys.exit()
-
-
 # For the megaROC curve, which combines the results of the ROC curves of the all lambdas tested
 # Format example for lambda=10: megaROC['lamb10'] = miniROC
 # where miniROC has keys "lamb" (for check), "ann_results", "rho_train", "rho_test"
@@ -530,8 +526,8 @@ for lamb in [10.0]:
         f.Write()
         f.Close()
 
-    save_ANN_predictions(filename, "bdt_results_pred_train_lamb" + str(lamb), ann_results, train=True)
-    save_ANN_predictions(filename, "bdt_results_pred_test_lamb" + str(lamb), ann_results, train=False)
+    save_ANN_predictions(filename, "ann_results_pred_train_lamb" + str(lamb), ann_results, train=True)
+    save_ANN_predictions(filename, "ann_results_pred_test_lamb" + str(lamb), ann_results, train=False)
 
 
 
