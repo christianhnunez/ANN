@@ -240,6 +240,9 @@ def save_BDT_predictions(filename, bdt_results, train):
     f.Write()
     f.Close()
 
+save_BDT_predictions(filename, bdt_results, train=True)
+save_BDT_predictions(filename, bdt_results, train=False)
+
 
 ## plot Mbb profile plot
 # ===
