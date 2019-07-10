@@ -214,6 +214,32 @@ plt.ylabel("Background Eff")
 plt.savefig("roc_bdt.png")
 plt.close()
 
+# Save pred_train and pred_test
+def save_BDT_predictions(filename, bdt_results, train):
+    name = ""
+    if train: 
+        name = "train"
+    else:
+        name = "test"
+
+    f = TFile(filename, "update")
+    t = TTree("bdt_results_"+name, "BDT predictions")
+
+    # Fill variables
+    pred_f = np.zeros(1, dtype=np.float64)
+
+    # Create all branches
+    t.Branch("pred_"+name, pred_f, "pred_"+name+"/D")
+
+    # Fill the tree
+    for i in range(len(bdt_results["pred_"+name])):
+        pred_f[0] = bdt_results["pred_"+name][i]
+        t.Fill()
+        
+    # Write and close file
+    f.Write()
+    f.Close()
+
 
 ## plot Mbb profile plot
 # ===
