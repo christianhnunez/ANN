@@ -500,35 +500,35 @@ for lamb in [10.0]:
     megaROC[miniName] = miniROC
 
     def save_ANN_predictions(filename, treename, ann_results, train):
-    name = ""
-    if train:
-        name = "pred_train"
-    else:
-        name = "pred_test"
+        name = ""
+        if train:
+            name = "pred_train"
+        else:
+            name = "pred_test"
 
-    f = TFile(filename, "update")
-    t = TTree(treename, "ann_dataset")
+        f = TFile(filename, "update")
+        t = TTree(treename, "ann_dataset")
 
-    # Fill variables
-    fill_vars = []
-    for i in range(ann_results[name].shape[1]):
-        fill_vars.append(np.zeros(1, dtype=np.float64))
+        # Fill variables
+        fill_vars = []
+        for i in range(ann_results[name].shape[1]):
+            fill_vars.append(np.zeros(1, dtype=np.float64))
 
-    # Create all branches
-    for j in range(ann_results[name].shape[1]):
-        t.Branch("bin"+str(j), fill_vars[j], "bin"+str(j)+"/D")
+        # Create all branches
+        for j in range(ann_results[name].shape[1]):
+            t.Branch("bin"+str(j), fill_vars[j], "bin"+str(j)+"/D")
 
-    # Fill the tree
-    # Outer loop: over all events (inputs)
-    for i in range(ann_results[name].shape[0]):
-        # Inner loop: over all input vars
-        for j in range(len(fill_vars)):
-            fill_vars[j][0] = (ann_results[name])[i,j]
-        t.Fill()
-    
-    # Write and close file
-    f.Write()
-    f.Close()
+        # Fill the tree
+        # Outer loop: over all events (inputs)
+        for i in range(ann_results[name].shape[0]):
+            # Inner loop: over all input vars
+            for j in range(len(fill_vars)):
+                fill_vars[j][0] = (ann_results[name])[i,j]
+            t.Fill()
+        
+        # Write and close file
+        f.Write()
+        f.Close()
 
     save_ANN_predictions(filename, "bdt_results_pred_train_lamb" + str(lamb), ann_results, train=True)
     save_ANN_predictions(filename, "bdt_results_pred_test_lamb" + str(lamb), ann_results, train=False)
