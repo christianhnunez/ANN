@@ -359,6 +359,7 @@ def save_ANN_dataset(filename, treename, ann_dataset, train):
     # Create all branches
     t.Branch(names[1], Y_f, names[1]+"Y_train/D")
 
+    print(ann_dataset[names[1]].shape)
     # Fill the tree
     for i in range(len(ann_dataset[names[1]])):
         Y_f[0] = np.array(ann_dataset[names[1]][i])
@@ -370,6 +371,7 @@ def save_ANN_dataset(filename, treename, ann_dataset, train):
 
 save_ANN_dataset(filename, "ann_dataset_train", ann_dataset, train=True)
 save_ANN_dataset(filename, "ann_dataset_test", ann_dataset, train=False)
+
 
 # For the megaROC curve, which combines the results of the ROC curves of the all lambdas tested
 # Format example for lambda=10: megaROC['lamb10'] = miniROC
