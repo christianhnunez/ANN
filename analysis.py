@@ -330,12 +330,13 @@ def save_ANN_dataset(filename, treename, ann_dataset, train):
     for i in range(ann_dataset[name].shape[1]):
         t.Branch(str(i), fill_vars[i], str(i)+"/D")
 
+    print("ann_dataset[name]: ", ann_dataset[name].shape)
     # Fill the tree
     # Outer loop: over all events (inputs)
     for i in range(ann_dataset[name].shape[0]):
         # Inner loop: over all input vars (label, eventWeight, etc.)
         for j in range(len(fill_vars)):
-            fill_vars[j][0] = np.array(ann_dataset[i, j])
+            fill_vars[j][0] = np.array(ann_dataset[name][i, j])
         t.Fill()
     
     # Write and close file
