@@ -142,9 +142,9 @@ test_index_perm  = np.random.permutation( np.array(range(MVA_test_array.shape[0]
 MVA_train_array  = MVA_train_array[train_index_perm,:]
 MVA_test_array   = MVA_test_array[test_index_perm,:]
 
-print("\n\n FOR TESTING: Taking only 1 percent of train and test. \n\n")
-MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.01)]
-MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.01)]
+print("\n\n FOR TESTING: Taking only 15 percent of train and test. \n\n")
+MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.15)]
+MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.15)]
 print("MVA_train_array length = " + str(MVA_train_array.shape[0]))
 print("MVA_test_array length = " + str(MVA_test_array.shape[0]))
 
@@ -381,7 +381,7 @@ save_ANN_dataset(filename, "ann_dataset_test", ann_dataset, train=False)
 # where miniROC has keys "lamb" (for check), "ann_results", "rho_train", "rho_test"
 megaROC = {}
 #for lamb in [0, 1.0, 5.0, 10.0]:
-for lamb in [10.0]:
+for lamb in [0, 2.0, 10.0]:
 
     model, hist = TrainANN( ann_dataset, lamb=lamb, clpretrain = 20, adpretrain = 10, 
                             epoch=50,  batch_size = 256 , nMBBbins = 10)
