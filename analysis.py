@@ -331,7 +331,9 @@ def save_ANN_dataset(filename, treename, ann_dataset, train):
         t.Branch(str(i), fill_vars[i], str(i)+"/D")
 
     print("ann_dataset[name]: ", ann_dataset[name].shape)
-    print("ok here: ", ann_dataset[name][3,6])
+    for i in range(len(fill_vars)):
+        print("ok here: ", ann_dataset[name][3,i])
+        
     # Fill the tree
     # Outer loop: over all events (inputs)
     for i in range(ann_dataset[name].shape[0]):
