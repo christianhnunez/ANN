@@ -311,66 +311,43 @@ ann_dataset["Y_test"]        = np.hstack( (mass_cat_test,  MVA_test_array[:, [0]
 ann_dataset["weights_train"] = MVA_train_array[:, 1]
 ann_dataset["weights_test"]  = MVA_test_array[:, 1]
 
-# Save the ANN dataset:
-# def save_ANN_dataset(filename, treename, ann_dataset, train):
-#     names = []
-#     if train:
-#         names = ["X_train", "Y_train", "weights_train"]
-#     else: 
-#         names = ["X_test", "Y_test", "weights_test"]
-
-#     f = TFile(filename, "update")
-#     t = TTree(treename, "ann_dataset")
-
-#     # Fill variables
-#     X_f      = np.zeros(1, dtype=np.float64)
-#     Y_f     = np.zeros(1, dtype=np.float64)
-#     weights_f = np.zeros(1, dtype=np.float64)
-
-#     # Create all branches
-#     #t.Branch(names[0], X_f, names[0]+"X_train/D")
-#     t.Branch(names[1], Y_f, names[1]+"Y_train/D")
-#     #t.Branch(names[2], weights_f, names[2]+"/D")
-
-#     # Fill the tree
-#     for i in range(len(ann_dataset[names[0]])):
-#         #X_f[0] = ann_dataset[names[0]][i]
-#         Y_f[0] = ann_dataset[names[1]][i]
-#         #weights_f[0] = ann_dataset[names[2]][i]
-#         t.Fill()
-    
-#     # Write and close file
-#     f.Write()
-#     f.Close()
-
 def save_ANN_dataset(filename, treename, ann_dataset, train):
-    names = []
+    name = ""
     if train:
-        names = ["X_train", "Y_train", "weights_train"]
-    else: 
-        names = ["X_test", "Y_test", "weights_test"]
+        name = "Y_train"
+    else:
+        name = "Y_test"
 
     f = TFile(filename, "update")
     t = TTree(treename, "ann_dataset")
 
     # Fill variables
-    Y_f     = np.zeros(1, dtype=np.float64)
+    fill_vars = []
+    for i in range(ann_dataset[name].shape[1]):
+        fill_vars.append(np.zeros(1, dtype=np.float64))
 
     # Create all branches
-    t.Branch(names[1], Y_f, names[1]+"Y_train/D")
+    for i in range(MVA_array.shape[1]):
+        t.Branch(str(i), fill_vars[i], str(i)+"/D")
 
-    print(ann_dataset[names[1]].shape)
     # Fill the tree
-    for i in range(len(ann_dataset[names[1]])):
-        Y_f[0] = np.array(ann_dataset[names[1]][i])
+    # Outer loop: over all events (inputs)
+    for i in range(ann_dataset[name].shape[0]):
+        # Inner loop: over all input vars (label, eventWeight, etc.)
+        for j in range(len(fill_vars)):
+            fill_vars[j][0] = np.array(ann_dataset[i, j])
         t.Fill()
     
     # Write and close file
     f.Write()
     f.Close()
 
+
 save_ANN_dataset(filename, "ann_dataset_train", ann_dataset, train=True)
 save_ANN_dataset(filename, "ann_dataset_test", ann_dataset, train=False)
+
+import sys
+sys.exit()
 
 
 # For the megaROC curve, which combines the results of the ROC curves of the all lambdas tested
