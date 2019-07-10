@@ -142,9 +142,9 @@ test_index_perm  = np.random.permutation( np.array(range(MVA_test_array.shape[0]
 MVA_train_array  = MVA_train_array[train_index_perm,:]
 MVA_test_array   = MVA_test_array[test_index_perm,:]
 
-print("\n\n FOR TESTING: Taking only 5 percent of train and test. \n\n")
-MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.05)]
-MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.05)]
+print("\n\n FOR TESTING: Taking only 1 percent of train and test. \n\n")
+MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.01)]
+MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.01)]
 print("MVA_train_array length = " + str(MVA_train_array.shape[0]))
 print("MVA_test_array length = " + str(MVA_test_array.shape[0]))
 
@@ -507,6 +507,7 @@ for lamb in [10.0]:
 
         # Fill variables
         fill_vars = []
+        print("\n\n\n ann_results[name] SHAPE: ", ann_results[name].shape)
         for i in range(ann_results[name].shape[1]):
             fill_vars.append(np.zeros(1, dtype=np.float64))
 
@@ -526,8 +527,8 @@ for lamb in [10.0]:
         f.Write()
         f.Close()
 
-    save_ANN_predictions(filename, "ann_results_pred_train_lamb" + str(lamb), ann_results, train=True)
-    save_ANN_predictions(filename, "ann_results_pred_test_lamb" + str(lamb), ann_results, train=False)
+    save_ANN_predictions(filename, "ann_results_pred_train_lamb"+str(lamb), ann_results, train=True)
+    save_ANN_predictions(filename, "ann_results_pred_test_lamb"+str(lamb), ann_results, train=False)
 
 
 
