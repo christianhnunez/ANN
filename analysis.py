@@ -329,7 +329,7 @@ def save_ANN_dataset(filename, treename, ann_dataset, train):
 
     # Create all branches
     for j in range(ann_dataset[name].shape[1]):
-        t.Branch("bin"str(j), fill_vars[j], "bin"+str(j)+"/D")
+        t.Branch("bin"+str(j), fill_vars[j], "bin"+str(j)+"/D")
 
     # Fill the tree
     # Outer loop: over all events (inputs)
