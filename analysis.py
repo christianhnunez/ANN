@@ -311,6 +311,7 @@ ann_dataset["Y_test"]        = np.hstack( (mass_cat_test,  MVA_test_array[:, [0]
 ann_dataset["weights_train"] = MVA_train_array[:, 1]
 ann_dataset["weights_test"]  = MVA_test_array[:, 1]
 
+
 def save_ANN_dataset(filename, treename, ann_dataset, train):
     name = ""
     if train:
@@ -327,19 +328,15 @@ def save_ANN_dataset(filename, treename, ann_dataset, train):
         fill_vars.append(np.zeros(1, dtype=np.float64))
 
     # Create all branches
-    for i in range(ann_dataset[name].shape[1]):
-        t.Branch(str(i), fill_vars[i], str(i)+"/D")
+    for j in range(ann_dataset[name].shape[1]):
+        t.Branch("bin"str(j), fill_vars[j], "bin"+str(j)+"/D")
 
-    print("ann_dataset[name]: ", ann_dataset[name].shape)
-    for i in range(len(fill_vars)):
-        print("ok here: ", ann_dataset[name][3,i])
-        
     # Fill the tree
     # Outer loop: over all events (inputs)
     for i in range(ann_dataset[name].shape[0]):
         # Inner loop: over all input vars
         for j in range(len(fill_vars)):
-            fill_vars[j][0] = np.array((ann_dataset[name])[i,j])
+            fill_vars[j][0] = (ann_dataset[name])[i,j]
         t.Fill()
     
     # Write and close file
