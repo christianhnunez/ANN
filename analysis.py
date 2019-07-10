@@ -383,7 +383,7 @@ megaROC = {}
 #for lamb in [0, 1.0, 5.0, 10.0]:
 for lamb in [0, 2.0, 10.0]:
 
-    model, hist = TrainANN( ann_dataset, lamb=lamb, clpretrain = 20, adpretrain = 10, 
+    model, hist = TrainANN( ann_dataset, lamb=lamb, clpretrain = 2, adpretrain = 2, 
                             epoch=50,  batch_size = 256 , nMBBbins = 10)
 
     plt.figure()
