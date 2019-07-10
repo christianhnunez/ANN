@@ -227,7 +227,7 @@ def TrainANN(dataset, lamb=1.0, clpretrain = 50, adpretrain = 50,
     ## alternate Step 2 (show only background)
     try:
         history["ad"] = model.fit( X_train_bkg, Y_train_bkg, batch_size=batch_size, epochs=adpretrain, validation_split=0.2, shuffle = True).history['loss']
-    except: KeyError:
+    except KeyError:
         history["ad"] = []
 
 
