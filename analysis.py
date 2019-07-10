@@ -327,7 +327,7 @@ def save_ANN_dataset(filename, treename, ann_dataset, train):
         fill_vars.append(np.zeros(1, dtype=np.float64))
 
     # Create all branches
-    for i in range(MVA_array.shape[1]):
+    for i in range(ann_dataset[name].shape[1]):
         t.Branch(str(i), fill_vars[i], str(i)+"/D")
 
     # Fill the tree
