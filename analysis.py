@@ -126,7 +126,7 @@ for s in ["sherpa", "vbf"]:
     MVAInputs[s] = mva_arr
 
 ## prepare MVA data sets
-train_frac      = 0.5
+train_frac      = 0.9
 n_bkg           = MVAInputs["sherpa"].shape[1]
 n_sig           = MVAInputs["vbf"].shape[1]
 
@@ -142,11 +142,46 @@ test_index_perm  = np.random.permutation( np.array(range(MVA_test_array.shape[0]
 MVA_train_array  = MVA_train_array[train_index_perm,:]
 MVA_test_array   = MVA_test_array[test_index_perm,:]
 
-print("\n\n FOR TESTING: Taking only 15 percent of train and test. \n\n")
-MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.15)]
-MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.15)]
-print("MVA_train_array length = " + str(MVA_train_array.shape[0]))
-print("MVA_test_array length = " + str(MVA_test_array.shape[0]))
+# print("\n\n FOR TESTING: Taking only 15 percent of train and test. \n\n")
+# MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.15)]
+# MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.15)]
+# print("MVA_train_array length = " + str(MVA_train_array.shape[0]))
+# print("MVA_test_array length = " + str(MVA_test_array.shape[0]))
+
+# BACKGROUND DOWNSAMPLING
+# function: downsample_bkg()
+# args:
+#   MVA_train_array is (n_training_examples, len(features+label+eventweight+mbb)) 2D matrix
+#   k is the final ratio of bkg:sig (k:1).
+def downsample_bkg(MVA_train_array, k):
+    # Set a k-value
+    # where the resulting train array will have a k:1 bkg:sig ratio
+    k = 1
+
+    # Try downsampling:
+    i_bkg = np.where(MVA_train_array[:, 0] == 0)[0]
+    i_sig = np.where(MVA_train_array[:, 0] == 1)[0]
+
+    # Print sample counts
+    num_bkg = len(i_bkg)
+    num_sig = len(i_sig)
+    print("bkg samples: ", num_bkg)
+    print("sig samples: ", num_sig)
+    print("bkg/sig = ", num_bkg/num_sig)
+
+    # Randomly sample from bkg len(i_sig) times without replacement
+    i_bkg_downsampled = np.random.choice(i_bkg, size=k*num_sig, replace=False)
+    print("bkg_downsampled/sig = ", len(i_bkg_downsampled)/num_sig)
+
+    # Join our new train set together
+    new_train_array = np.vstack((MVA_train_array[i_bkg_downsampled, :], MVA_train_array[i_sig,:]))
+
+    # Reshuffle
+    train_index_perm = np.random.permutation( np.array(range(new_train_array.shape[0])) )
+    new_train_array  = new_train_array[train_index_perm,:]
+    return new_train_array
+
+MVA_train_array = downsample_bkg(MVA_train_array, k=1)
 
 
 # UPDATE: Move this function to utils.
@@ -445,6 +480,7 @@ for lamb in [0, 2.0, 10.0]:
 
     # Show
     plt.ylabel("Score")
+    plt.ylim([0, 0.6])
     plt.xlabel("Mbb (GeV)")
     plt.grid()
     plt.legend(fancybox=True)
@@ -477,6 +513,7 @@ for lamb in [0, 2.0, 10.0]:
 
     # Show
     plt.ylabel("Score")
+    plt.ylim([0, 0.6])
     plt.xlabel("Mbb (GeV)")
     plt.grid()
     plt.legend(fancybox=True)
@@ -544,6 +581,7 @@ for key in megaROC.keys():
 plt.legend(fancybox=True)
 plt.xlabel("Signal Efficiency")
 plt.ylabel("Background Efficiency")
+plt.ylim([0, 0.6])
 plt.savefig("roc_ann_HPsearch".format(str(lamb)))
 plt.close()
 
