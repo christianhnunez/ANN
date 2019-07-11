@@ -480,7 +480,6 @@ for lamb in [0, 2.0, 10.0]:
 
     # Show
     plt.ylabel("Score")
-    plt.ylim([0, 0.6])
     plt.xlabel("Mbb (GeV)")
     plt.grid()
     plt.legend(fancybox=True)
@@ -513,7 +512,6 @@ for lamb in [0, 2.0, 10.0]:
 
     # Show
     plt.ylabel("Score")
-    plt.ylim([0, 0.6])
     plt.xlabel("Mbb (GeV)")
     plt.grid()
     plt.legend(fancybox=True)
@@ -581,7 +579,6 @@ for key in megaROC.keys():
 plt.legend(fancybox=True)
 plt.xlabel("Signal Efficiency")
 plt.ylabel("Background Efficiency")
-plt.ylim([0, 0.6])
 plt.savefig("roc_ann_HPsearch".format(str(lamb)))
 plt.close()
 
