@@ -126,7 +126,7 @@ for s in ["sherpa", "vbf"]:
     MVAInputs[s] = mva_arr
 
 ## prepare MVA data sets
-train_frac      = 0.9
+train_frac      = 0.5
 n_bkg           = MVAInputs["sherpa"].shape[1]
 n_sig           = MVAInputs["vbf"].shape[1]
 
