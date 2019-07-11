@@ -219,16 +219,16 @@ def TrainANN(dataset, lamb=1.0, clpretrain = 50, adpretrain = 50,
 
     ## (standard step 2) the model is trained with ad only objective
     model.compile(loss=custom_objective_ad_only, optimizer=adam, metrics=["accuracy"])
-    try:
-        history["ad"] = model.fit( X_train , Y_train, batch_size=batch_size, epochs=adpretrain, validation_split=0.2, shuffle = True).history['loss']
-    except KeyError:
-        history["ad"] = []
-
-    ## alternate Step 2 (show only background)
     #try:
-    #    history["ad"] = model.fit( X_train_bkg, Y_train_bkg, batch_size=batch_size, epochs=adpretrain, validation_split=0.2, shuffle = True).history['loss']
+    #    history["ad"] = model.fit( X_train , Y_train, batch_size=batch_size, epochs=adpretrain, validation_split=0.2, shuffle = True).history['loss']
     #except KeyError:
     #    history["ad"] = []
+
+    # alternate Step 2 (show only background)
+    try:
+        history["ad"] = model.fit( X_train_bkg, Y_train_bkg, batch_size=batch_size, epochs=adpretrain, validation_split=0.2, shuffle = True).history['loss']
+    except KeyError:
+        history["ad"] = []
 
 
     #####################################################
@@ -260,64 +260,25 @@ def TrainANN(dataset, lamb=1.0, clpretrain = 50, adpretrain = 50,
 
         model.compile(loss=custom_objective_ad_only, optimizer=adam, metrics=["accuracy"])
         # standard step 2
-        model.fit( X_train , Y_train, batch_size=batch_size, epochs=1, validation_split=0.2, 
-                   shuffle = True).history['loss'][0] 
-        # alternate Step 2 (show only background)
-        #model.fit( X_train_bkg , Y_train_bkg, batch_size=batch_size, epochs=1, validation_split=0.2, 
+        #model.fit( X_train , Y_train, batch_size=batch_size, epochs=1, validation_split=0.2, 
         #           shuffle = True).history['loss'][0] 
+        # alternate Step 2 (show only background)
+        model.fit( X_train_bkg , Y_train_bkg, batch_size=batch_size, epochs=1, validation_split=0.2, 
+                   shuffle = True).history['loss'][0] 
 
         model.compile(loss=custom_objective_cl_only, optimizer=adam, metrics=["accuracy"])
         history["ann_cl"].append( model.evaluate(X_train[0:int(X_train.shape[0]*0.8)], Y_train[0:int(Y_train.shape[0]*0.8)])[0]  )
         
         model.compile(loss=custom_objective_ad_only, optimizer=adam, metrics=["accuracy"])
         # standard step 2
-        history["ann_ad"].append( model.evaluate(X_train[0:int(X_train.shape[0]*0.8)], Y_train[0:int(Y_train.shape[0]*0.8)])[0] )
+        #history["ann_ad"].append( model.evaluate(X_train[0:int(X_train.shape[0]*0.8)], Y_train[0:int(Y_train.shape[0]*0.8)])[0] )
         # alternate Step 2 (show only background)
-        #history["ann_ad"].append( model.evaluate(X_train_bkg[0:int(X_train_bkg.shape[0]*0.8)], Y_train_bkg[0:int(Y_train_bkg.shape[0]*0.8)])[0] )
+        history["ann_ad"].append( model.evaluate(X_train_bkg[0:int(X_train_bkg.shape[0]*0.8)], Y_train_bkg[0:int(Y_train_bkg.shape[0]*0.8)])[0] )
 
         model.compile(loss=custom_objective, optimizer=adam, metrics=["accuracy"])
         history["ann"].append( model.evaluate(X_train[0:int(X_train.shape[0]*0.8)], Y_train[0:int(Y_train.shape[0]*0.8)])[0] )
 
         print ("cl loss", history["ann_cl"][-1], "ad loss", history["ann_ad"][-1])
-
-
-    '''
-    for ie in range(epoch):
-        print (ie, 'adversary network training')
-
-
-        #for isub in range(minibatch):
-
-        print ('epoch', ie)
-        for il in range(len(model.layers)):
-            if "ad" in model.layers[il].name:
-                model.layers[il].trainable = False
-            if "cl" in model.layers[il].name:
-                model.layers[il].trainable = True
-        model.compile(loss=custom_objective, optimizer=adam, metrics=["accuracy"])
-        indices = np.random.permutation(len(X_train))[:batch_size]
-        model.train_on_batch(X_train[indices], Y_train[indices])
-
-        for il in range(len(model.layers)):
-            if "ad" in model.layers[il].name:
-                model.layers[il].trainable = True
-            if "cl" in model.layers[il].name:
-                model.layers[il].trainable = False
-
-        model.compile(loss=custom_objective_ad_only, optimizer=adam, metrics=["accuracy"])
-        model.fit( X_train_bkg , Y_train_bkg, batch_size=batch_size, epochs=1, validation_split=0.2, shuffle = True)
-
-        model.compile(loss=custom_objective_cl_only, optimizer=adam, metrics=["accuracy"])
-        history["ann_cl"].append( model.evaluate(X_train[0:int(X_train.shape[0]*0.8)], Y_train[0:int(Y_train.shape[0]*0.8)])[0]  )
-        
-        model.compile(loss=custom_objective_ad_only, optimizer=adam, metrics=["accuracy"])
-        history["ann_ad"].append( model.evaluate(X_train[0:int(X_train.shape[0]*0.8)], Y_train[0:int(Y_train.shape[0]*0.8)])[0] )
-
-        model.compile(loss=custom_objective, optimizer=adam, metrics=["accuracy"])
-        history["ann"].append( model.evaluate(X_train[0:int(X_train.shape[0]*0.8)], Y_train[0:int(Y_train.shape[0]*0.8)])[0] )
-
-        print ("cl loss", history["ann_cl"][-1], "ad loss", history["ann_ad"][-1])
-    '''
 
     fileNameBase = "ANN_lambda"+str(lamb)+"_clpretrain"+str(clpretrain)+"_adpretrain"+str(adpretrain)+"_epoch"+str(epoch)+"_minibatch"+str(batch_size)+"_mBBbins"+str(nMBBbins)
     saveModel(fileNameBase, model)
