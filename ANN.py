@@ -249,8 +249,10 @@ def TrainANN(dataset, lamb=1.0, clpretrain = 50, adpretrain = 50,
                 model.layers[il].trainable = True
 
         model.compile(loss=custom_objective, optimizer=adam, metrics=["accuracy"])
+        # STEP C.i
         model.fit( X_train , Y_train, batch_size=batch_size, epochs=1, validation_split=0.2, 
-                   shuffle = True,sample_weight=weights_train).history['loss'][0] 
+                   shuffle = True).history['loss'][0] 
+        # sample_weight=weights_train
 
         for il in range(len(model.layers)):
             if "ad" in model.layers[il].name:
@@ -260,8 +262,11 @@ def TrainANN(dataset, lamb=1.0, clpretrain = 50, adpretrain = 50,
 
         model.compile(loss=custom_objective_ad_only, optimizer=adam, metrics=["accuracy"])
         # standard step 2
-        model.fit( X_train , Y_train, batch_size=batch_size, epochs=1, validation_split=0.2, 
-                  shuffle = True, sample_weight=weights_train).history['loss'][0] 
+        # STEP C.ii
+        print("batch size for c.ii: ", X_train.shape[0])
+        model.fit( X_train , Y_train, batch_size=X_train.shape[0], epochs=1, validation_split=0.2, 
+                  shuffle = True).history['loss'][0] 
+        # sample_weight=weights_train
         # alternate Step 2 (show only background)
         #model.fit( X_train_bkg , Y_train_bkg, batch_size=batch_size, epochs=1, validation_split=0.2, 
         #           shuffle = True).history['loss'][0] 
