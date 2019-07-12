@@ -142,11 +142,11 @@ test_index_perm  = np.random.permutation( np.array(range(MVA_test_array.shape[0]
 MVA_train_array  = MVA_train_array[train_index_perm,:]
 MVA_test_array   = MVA_test_array[test_index_perm,:]
 
-# print("\n\n FOR TESTING: Taking only 15 percent of train and test. \n\n")
-# MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.15)]
-# MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.15)]
-# print("MVA_train_array length = " + str(MVA_train_array.shape[0]))
-# print("MVA_test_array length = " + str(MVA_test_array.shape[0]))
+print("\n\n FOR TESTING: Taking only 15 percent of train and test. \n\n")
+MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.15)]
+MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.15)]
+print("MVA_train_array length = " + str(MVA_train_array.shape[0]))
+print("MVA_test_array length = " + str(MVA_test_array.shape[0]))
 
 # BACKGROUND DOWNSAMPLING
 # function: downsample_bkg()
@@ -181,7 +181,7 @@ def downsample_bkg(MVA_train_array, k):
     new_train_array  = new_train_array[train_index_perm,:]
     return new_train_array
 
-MVA_train_array = downsample_bkg(MVA_train_array, k=1)
+#MVA_train_array = downsample_bkg(MVA_train_array, k=1)
 
 
 # UPDATE: Move this function to utils.
