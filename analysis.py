@@ -213,7 +213,7 @@ def save_MVA_array(filename, treename, MVA_array, bnames):
 # Save the MVA arrays for train and test
 branch_names = ["label", "eventWeight", "mBB"] + var_ANN
 save_MVA_array(filename, "MVA_train_array", MVA_train_array, branch_names)
-save_MVA_array(filename, "MVA_test_array", MVA_train_array, branch_names)
+save_MVA_array(filename, "MVA_test_array", MVA_test_array, branch_names)
 
 #########
 ## BDT ##
@@ -415,8 +415,8 @@ save_ANN_dataset(filename, "ann_dataset_test", ann_dataset, train=False)
 # Format example for lambda=10: megaROC['lamb10'] = miniROC
 # where miniROC has keys "lamb" (for check), "ann_results", "rho_train", "rho_test"
 megaROC = {}
-#for lamb in [0, 1.0, 5.0, 10.0]:
-for lamb in [20.0, 30.0, 100.0]:
+for lamb in [0, 10.0]:
+#for lamb in [20.0, 30.0, 100.0]:
 
     model, hist = TrainANN( ann_dataset, lamb=lamb, clpretrain = 2, adpretrain = 2, 
                             epoch=50,  batch_size = 256 , nMBBbins = 10)
