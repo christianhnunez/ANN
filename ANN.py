@@ -121,7 +121,7 @@ def TrainANN(dataset, lamb=1.0, clpretrain = 50, adpretrain = 50,
     X_test = dataset['X_test']
     Y_test = dataset['Y_test']
     weights_train = dataset['weights_train']
-    weights_train_bkg = dataset[Y_train[:,-1]==0]
+    weights_train_bkg = weights_train[Y_train[:,-1]==0]
 
     X_train_bkg = X_train[ Y_train[:,-1]==0]
     Y_train_bkg = Y_train[ Y_train[:,-1]==0]
