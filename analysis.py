@@ -416,7 +416,7 @@ save_ANN_dataset(filename, "ann_dataset_test", ann_dataset, train=False)
 # where miniROC has keys "lamb" (for check), "ann_results", "rho_train", "rho_test"
 megaROC = {}
 #for lamb in [0, 1.0, 5.0, 10.0]:
-for lamb in [0, 2.0, 10.0]:
+for lamb in [20.0, 30.0, 100.0]:
 
     model, hist = TrainANN( ann_dataset, lamb=lamb, clpretrain = 2, adpretrain = 2, 
                             epoch=50,  batch_size = 256 , nMBBbins = 10)
