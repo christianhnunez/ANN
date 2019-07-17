@@ -23,9 +23,15 @@ f.Close()
 
 ## declare event variables of interests
 var_bb  = ["mBB", "pTBB", "eventWeight"]
-var_ANN = ["mJJ", "pTJJ", "cosTheta_boost",  "mindRJ1_Ex", "max_J1J2",
+#var_ANN = ["mJJ", "pTJJ", "cosTheta_boost",  "mindRJ1_Ex", "max_J1J2",
+#           "eta_J_star",  "QGTagger_NTracksJ2", "deltaMJJ",
+#           "pT_balance"]
+
+# New:
+var_ANN = ["mJJ", "pTJJ",  "mindRJ1_Ex", "max_J1J2",
            "eta_J_star",  "QGTagger_NTracksJ2", "deltaMJJ",
            "pT_balance"]
+
 var_all = var_bb+var_ANN
 
 #"mindRJ1_Ex" not used for 2 central
@@ -415,7 +421,7 @@ save_ANN_dataset(filename, "ann_dataset_test", ann_dataset, train=False)
 # Format example for lambda=10: megaROC['lamb10'] = miniROC
 # where miniROC has keys "lamb" (for check), "ann_results", "rho_train", "rho_test"
 megaROC = {}
-for lamb in [0, 10.0]:
+for lamb in [0, 2.0, 10.0]:
 #for lamb in [20.0, 30.0, 100.0]:
 
     model, hist = TrainANN( ann_dataset, lamb=lamb, clpretrain = 2, adpretrain = 2, 
