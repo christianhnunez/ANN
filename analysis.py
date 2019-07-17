@@ -33,7 +33,12 @@ var_bb  = ["mBB", "pTBB", "eventWeight"]
 #            "pT_balance"]
 
 # ALT15: no costheta_boost or max_J1J2
-var_ANN = ["mJJ", "pTJJ",  "mindRJ1_Ex",
+# var_ANN = ["mJJ", "pTJJ",  "mindRJ1_Ex",
+#            "eta_J_star",  "QGTagger_NTracksJ2", "deltaMJJ",
+#            "pT_balance"]
+
+#ALT16: no max_J1J2
+var_ANN = ["mJJ", "pTJJ", "cosTheta_boost",  "mindRJ1_Ex",
            "eta_J_star",  "QGTagger_NTracksJ2", "deltaMJJ",
            "pT_balance"]
 
