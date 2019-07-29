@@ -5,7 +5,7 @@ from copy import deepcopy
 import os
 import scipy.stats as stats
 import pickle
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import roc_curve, auc, precision_recall_curve
 import theano
 import theano.tensor as T
 theano.config.optimizer='None'
@@ -317,11 +317,22 @@ def predictANN(model, dataset):
     auc_train  = round(auc(roc_train[1], roc_train[0], reorder=True), 3)
     auc_test   = round(auc(roc_test[1], roc_test[0], reorder=True), 3)
 
-    results = {"pred_train": pred_train,
-               "pred_test":  pred_test, 
-               "roc_train":  roc_train,
-               "roc_test":   roc_test,
-               "auc_train":  auc_train,
-               "auc_test":   auc_test}
+    # Precision-Recall Curve
+    prc_train = precision_recall_curve( Y_train[:, -1], pred_train)
+    prc_test = precision_recall_curve( Y_test[:, -1], pred_test)
+
+    auc_prc_train = round(auc(prc_train[1], prc_train[0], reorder=True), 3)
+    auc_prc_test = round(auc(prc_test[1], prc_test[0], reorder=True), 3)
+
+    results = {"pred_train":    pred_train,
+               "pred_test":     pred_test, 
+               "roc_train":     roc_train,
+               "roc_test":      roc_test,
+               "auc_train":     auc_train,
+               "auc_test":      auc_test,
+               "prc_train":     prc_train,
+               "prc_test":      prc_test,
+               "auc_prc_train": auc_prc_train,
+               "auc_prc_test":  auc_prc_test}
 
     return  results

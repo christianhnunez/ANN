@@ -1,4 +1,5 @@
 from ANN import TrainANN, predictANN
+from sidebander import getBDTANNsidebands
 import ROOT
 from ROOT import TFile, TTree
 import root_numpy as rnp
@@ -10,7 +11,9 @@ from scipy.stats import pearsonr, binned_statistic
 import numpy as np
 from array import array
 from copy import deepcopy
-from bdt import buildBDT, predictBDT
+from bdt import buildBDT, predictBDT, predictBDTonSideband
+import matplotlib
+matplotlib.use("PS")
 import matplotlib.pyplot as plt
 import logging 
 logging.getLogger('matplotlib.pyplot').setLevel(logging.WARNING) 
@@ -23,34 +26,23 @@ f.Close()
 
 ## declare event variables of interests
 var_bb  = ["mBB", "pTBB", "eventWeight"]
-#var_ANN = ["mJJ", "pTJJ", "cosTheta_boost",  "mindRJ1_Ex", "max_J1J2",
-#           "eta_J_star",  "QGTagger_NTracksJ2", "deltaMJJ",
-#           "pT_balance"]
-
-# New (NO COSTHETA_BOOST):
-# var_ANN = ["mJJ", "pTJJ",  "mindRJ1_Ex", "max_J1J2",
-#            "eta_J_star",  "QGTagger_NTracksJ2", "deltaMJJ",
-#            "pT_balance"]
-
-# ALT15: no costheta_boost or max_J1J2
-# var_ANN = ["mJJ", "pTJJ",  "mindRJ1_Ex",
-#            "eta_J_star",  "QGTagger_NTracksJ2", "deltaMJJ",
-#            "pT_balance"]
-
-#ALT16: no max_J1J2
-var_ANN = ["mJJ", "pTJJ", "cosTheta_boost",  "mindRJ1_Ex",
-           "eta_J_star",  "QGTagger_NTracksJ2", "deltaMJJ",
+var_ANN = ["mJJ", "pTJJ", "cosTheta_boost",  "mindRJ1_Ex", "max_J1J2",
+           "eta_J_star", "deltaMJJ",
            "pT_balance"]
 
+#var_ANN = ["mJJ", "pTJJ",  "mindRJ1_Ex", "max_J1J2",
+#           "eta_J_star", "deltaMJJ",
+#           "pT_balance"]
 
 var_all = var_bb+var_ANN
 
-#"mindRJ1_Ex" not used for 2 central
+# TEST SIDEBANDS?
+testBDTonSidebands = False
 
 ## create physics process
 SAMPLES = {}
-SAMPLES["sherpa"] = PhysicsProcess("Sherpa Multi-b", "/eos/atlas/user/m/maklein/vbfhbb_mvainputs/1for2cen_loose/tree_mcmj_d.root")
-SAMPLES["vbf"]    = PhysicsProcess("VBF H->bb",      "/eos/atlas/user/m/maklein/vbfhbb_mvainputs/1for2cen_loose/tree_vbf_ade.root")
+SAMPLES["sherpa"] = PhysicsProcess("Sherpa Multi-b", "1for2cen_loose/tree_mcmjreweight_d.root")
+SAMPLES["vbf"]    = PhysicsProcess("VBF H->bb",      "1for2cen_loose/tree_vbf_ade.root")
 # Old root files
 #SAMPLES["sherpa"] = PhysicsProcess("Sherpa Multi-b", "/eos/atlas/user/m/maklein/vbfhbb_mvainputs/cen2/tree_2central_sherpamj_de.root")
 #SAMPLES["vbf"]    = PhysicsProcess("VBF H->bb",      "/eos/atlas/user/m/maklein/vbfhbb_mvainputs/cen2/tree_2central_vbf_de.root")
@@ -143,7 +135,7 @@ for s in ["sherpa", "vbf"]:
     MVAInputs[s] = mva_arr
 
 ## prepare MVA data sets
-train_frac      = 0.5
+train_frac      = 0.8
 n_bkg           = MVAInputs["sherpa"].shape[1]
 n_sig           = MVAInputs["vbf"].shape[1]
 
@@ -266,6 +258,18 @@ plt.ylabel("Background Eff")
 plt.savefig("roc_bdt.png")
 plt.close()
 
+## plot the PRC curve
+plt.figure()
+plt.plot(  bdt_results["prc_train"][1],  bdt_results["prc_train"][0], 
+           label="prc training set, AUC="+str(bdt_results["auc_prc_train"])+ " rho(mass,score)="+str(train_mass_score_corr))
+plt.plot(  bdt_results["prc_test"][1],  bdt_results["prc_test"][0], 
+           label="prc test set, AUC="+str(bdt_results["auc_prc_test"])+ " rho(mass,score)="+str(test_mass_score_corr))
+plt.legend()
+plt.xlabel("recall")
+plt.ylabel("precision")
+plt.savefig("prc_bdt.png")
+plt.close()
+
 # Save pred_train and pred_test
 def save_BDT_predictions(filename, bdt_results, train):
     name = ""
@@ -365,6 +369,77 @@ plt.legend(fancybox=True)
 plt.savefig("profile_bdt_test_mass.png")
 plt.close()
 
+#################################################
+#             TEST BDT ON SIDEBANDS             #
+#################################################
+if testBDTonSidebands:
+    bdt_sideband, ann_sideband, real_data = getBDTANNsidebands(var_all)
+    bdt_sideband_results = predictBDTonSideband(bdt_model, bdt_sideband)
+    test_mass_score_corr   =  round(pearsonr(bdt_sideband_results["pred_test"][real_data[:,0]==0],  real_data[:, 2][real_data[:,0]==0])[0], 4)
+
+    # Background only
+    means_result = binned_statistic(real_data[:, 2][real_data[:,0]==0], 
+                                    [bdt_sideband_results["pred_test"][real_data[:,0]==0], 
+                                     bdt_sideband_results["pred_test"][real_data[:,0]==0]**2], 
+                                    bins=10, range=[mass_range_low, mass_range_high], statistic='mean')
+    means, means2 = means_result.statistic
+    standard_deviations = np.sqrt(means2 - means**2)
+    bin_edges = means_result.bin_edges
+    bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
+    plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="bkg", solid_capstyle='projecting', capsize=4)
+    plt.ylabel("Score")
+    plt.xlabel("Mbb (GeV)")
+    plt.grid()
+    plt.legend(fancybox=True)
+    plt.savefig("SIDEBAND_profile_BDT.png")
+    plt.close()
+
+    ## plot the ROC curve
+    plt.figure()
+    plt.plot(  bdt_sideband_results["roc_test"][1],  bdt_sideband_results["roc_test"][0], 
+               label="roc test set, AUC="+str(bdt_sideband_results["auc_test"])+ " rho(mass,score)="+str(test_mass_score_corr))
+    plt.legend()
+    plt.xlabel("Signal Eff")
+    plt.ylabel("Background Eff")
+    plt.savefig("SIDEBAND_roc_BDT.png")
+    plt.close()
+
+    ## plot the PRC curve
+    plt.figure()
+    plt.plot(  bdt_sideband_results["prc_test"][1],  bdt_sideband_results["prc_test"][0], 
+               label="prc test set, AUC="+str(bdt_sideband_results["auc_prc_test"])+ " rho(mass,score)="+str(test_mass_score_corr))
+    plt.legend()
+    plt.xlabel("recall")
+    plt.ylabel("precision")
+    plt.savefig("SIDEBAND_prc_BDT.png")
+    plt.close()
+
+    def save_BDT_sideband_predictions(filename, bdt_results, train):
+        name = ""
+        if train: 
+            name = "train"
+        else:
+            name = "test"
+
+        f = TFile(filename, "update")
+        t = TTree("bdt_sideband_results_"+name, "BDT predictions")
+
+        # Fill variables
+        pred_f = np.zeros(1, dtype=np.float64)
+
+        # Create all branches
+        t.Branch("pred_"+name, pred_f, "pred_"+name+"/D")
+
+        # Fill the tree
+        for i in range(len(bdt_results["pred_"+name])):
+            pred_f[0] = bdt_results["pred_"+name][i]
+            t.Fill()
+            
+        # Write and close file
+        f.Write()
+        f.Close()
+
+    save_BDT_sideband_predictions(filename, bdt_sideband_results, train=False)
 
 ###########
 ### ANN ###
@@ -432,7 +507,7 @@ save_ANN_dataset(filename, "ann_dataset_test", ann_dataset, train=False)
 # Format example for lambda=10: megaROC['lamb10'] = miniROC
 # where miniROC has keys "lamb" (for check), "ann_results", "rho_train", "rho_test"
 megaROC = {}
-for lamb in [0, 2.0, 10.0]:
+for lamb in [0.0, 2.0, 10.0]:
 #for lamb in [20.0, 30.0, 100.0]:
 
     model, hist = TrainANN( ann_dataset, lamb=lamb, clpretrain = 2, adpretrain = 2, 
@@ -453,8 +528,8 @@ for lamb in [0, 2.0, 10.0]:
     plt.close()
 
     ann_results = predictANN(model, ann_dataset)
-    train_mass_score_corr  =  round(pearsonr(ann_results["pred_train"][MVA_train_array[:,0]==0], MVA_train_array[:, 2][MVA_train_array[:,0]==0])[0], 3)
-    test_mass_score_corr   =  round(pearsonr(ann_results["pred_test"][MVA_test_array[:,0]==0],  MVA_test_array[:, 2][MVA_test_array[:,0]==0])[0], 3)
+    train_mass_score_corr  =  round(pearsonr(ann_results["pred_train"][MVA_train_array[:,0]==0], MVA_train_array[:, 2][MVA_train_array[:,0]==0])[0], 4)
+    test_mass_score_corr   =  round(pearsonr(ann_results["pred_test"][MVA_test_array[:,0]==0],  MVA_test_array[:, 2][MVA_test_array[:,0]==0])[0], 4)
     
     ## plot the ROC curve
     plt.figure()
@@ -467,6 +542,18 @@ for lamb in [0, 2.0, 10.0]:
     plt.xlabel("Signal Eff")
     plt.ylabel("Background Eff")
     plt.savefig("roc_ann_lambda{!s}.png".format(str(lamb)))
+    plt.close()
+
+    ## plot the PRC curve
+    plt.figure()
+    plt.plot(  ann_results["prc_train"][1],  ann_results["prc_train"][0], 
+               label="prc training set, AUC="+str(ann_results["auc_prc_train"])+ " rho(mass,score)="+str(train_mass_score_corr))
+    plt.plot(  ann_results["prc_test"][1],  ann_results["prc_test"][0], 
+               label="prc test set, AUC="+str(ann_results["auc_prc_test"])+ " rho(mass,score)="+str(test_mass_score_corr))
+    plt.legend()
+    plt.xlabel("recall")
+    plt.ylabel("precision")
+    plt.savefig("prc_ann_lambda{!s}.png".format(str(lamb)))
     plt.close()
 
     # ================================================
@@ -596,7 +683,7 @@ for key in megaROC.keys():
 plt.legend(fancybox=True)
 plt.xlabel("Signal Efficiency")
 plt.ylabel("Background Efficiency")
-plt.savefig("roc_ann_HPsearch".format(str(lamb)))
+plt.savefig("roc_ann_HPsearch.png")
 plt.close()
 
 
