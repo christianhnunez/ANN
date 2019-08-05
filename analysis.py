@@ -11,7 +11,8 @@ from scipy.stats import pearsonr, binned_statistic
 import numpy as np
 from array import array
 from copy import deepcopy
-from bdt import buildBDT, predictBDT, predictBDTonSideband
+from bdt import buildBDT, buildBDT_new, predictBDT, predictBDTonSideband
+from utils import overlayed_fig5
 import matplotlib
 matplotlib.use("PS")
 import matplotlib.pyplot as plt
@@ -26,13 +27,13 @@ f.Close()
 
 ## declare event variables of interests
 var_bb  = ["mBB", "pTBB", "eventWeight"]
-var_ANN = ["mJJ", "pTJJ", "cosTheta_boost",  "mindRJ1_Ex", "max_J1J2",
-           "eta_J_star", "deltaMJJ",
-           "pT_balance"]
-
-#var_ANN = ["mJJ", "pTJJ",  "mindRJ1_Ex", "max_J1J2",
+# var_ANN = ["mJJ", "pTJJ", "cosTheta_boost",  "mindRJ1_Ex", "max_J1J2",
 #           "eta_J_star", "deltaMJJ",
 #           "pT_balance"]
+
+var_ANN = ["mJJ","pTJJ","asymJJ","pT_balance","dEtaBBJJ", "dEtaJJ",
+           "dPhiBBJJ","angleAsymBB","nJets20pt","mindRJ1_Ex",
+           "mindRJ2_Ex","NTrk500PVJ2"]
 
 var_all = var_bb+var_ANN
 
@@ -41,7 +42,7 @@ testBDTonSidebands = False
 
 ## create physics process
 SAMPLES = {}
-SAMPLES["sherpa"] = PhysicsProcess("Sherpa Multi-b", "1for2cen_loose/tree_mcmjreweight_d.root")
+SAMPLES["sherpa"] = PhysicsProcess("Sherpa Multi-b", "1for2cen_loose/tree_mcmjfullreweight_d.root ")
 SAMPLES["vbf"]    = PhysicsProcess("VBF H->bb",      "1for2cen_loose/tree_vbf_ade.root")
 # Old root files
 #SAMPLES["sherpa"] = PhysicsProcess("Sherpa Multi-b", "/eos/atlas/user/m/maklein/vbfhbb_mvainputs/cen2/tree_2central_sherpamj_de.root")
@@ -134,6 +135,44 @@ for s in ["sherpa", "vbf"]:
         mva_arr = np.vstack( (mva_arr, SAMPLES[s].var[var][idx]) )
     MVAInputs[s] = mva_arr
 
+
+############################
+### DERIVED VARIABLES (MATT)
+###
+
+# Creating new variables:
+var_NEW = ["mJJ","pTJJ","asymJJ","pT_balance","dEtaBBJJ/dEtaJJ",
+           "dPhiBBJJ","angleAsymBB","nJets20pt","min(mindRJ1_Ex,10)",
+           "min(mindRJ2_Ex,10)","NTrk500PVJ2"]
+mm = ["label", "eventWeight", "mBB"] + var_NEW
+print("using new ANN variables")
+for i in range(0, len(mm)):
+    print(i, " : ", mm[i])
+
+# Taking MVAInputs and derive:
+orig = MVAInputs
+MVAInputs = {}
+for s in ["sherpa", "vbf"]:
+    arr = np.vstack((orig[s][0, :], 
+                     orig[s][1, :], 
+                     orig[s][2, :], 
+                     orig[s][3, :],
+                     orig[s][4, :],
+                     orig[s][5, :],
+                     orig[s][6, :],
+                     (orig[s][7, :]/orig[s][8, :]),
+                     orig[s][9, :],
+                     orig[s][10, :],
+                     orig[s][11, :],
+                     np.minimum(orig[s][12, :], np.array([10]*(orig[s].shape[1]))),
+                     np.minimum(orig[s][13, :], np.array([10]*(orig[s].shape[1]))),
+                     orig[s][14, :]))
+    MVAInputs[s] = arr
+
+# ### 
+# ### END DERIVED VARIABLES
+# #########################
+
 ## prepare MVA data sets
 train_frac      = 0.8
 n_bkg           = MVAInputs["sherpa"].shape[1]
@@ -151,9 +190,9 @@ test_index_perm  = np.random.permutation( np.array(range(MVA_test_array.shape[0]
 MVA_train_array  = MVA_train_array[train_index_perm,:]
 MVA_test_array   = MVA_test_array[test_index_perm,:]
 
-print("\n\n FOR TESTING: Taking only 15 percent of train and test. \n\n")
-MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.15)]
-MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.15)]
+print("\n\n FOR TESTING: Taking only 20 percent of train and test. \n\n")
+MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.20)]
+MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.20)]
 print("MVA_train_array length = " + str(MVA_train_array.shape[0]))
 print("MVA_test_array length = " + str(MVA_test_array.shape[0]))
 
@@ -162,11 +201,9 @@ print("MVA_test_array length = " + str(MVA_test_array.shape[0]))
 # args:
 #   MVA_train_array is (n_training_examples, len(features+label+eventweight+mbb)) 2D matrix
 #   k is the final ratio of bkg:sig (k:1).
-def downsample_bkg(MVA_train_array, k):
+def downsample_bkg(MVA_train_array, k=1):
     # Set a k-value
     # where the resulting train array will have a k:1 bkg:sig ratio
-    k = 1
-
     # Try downsampling:
     i_bkg = np.where(MVA_train_array[:, 0] == 0)[0]
     i_sig = np.where(MVA_train_array[:, 0] == 1)[0]
@@ -190,8 +227,32 @@ def downsample_bkg(MVA_train_array, k):
     new_train_array  = new_train_array[train_index_perm,:]
     return new_train_array
 
-#MVA_train_array = downsample_bkg(MVA_train_array, k=1)
+def upsample_sig(MVA_train_array):
+    i_bkg = np.where(MVA_train_array[:, 0] == 0)[0]
+    i_sig = np.where(MVA_train_array[:, 0] == 1)[0]
 
+    # Print sample counts
+    num_bkg = len(i_bkg)
+    num_sig = len(i_sig)
+    print("bkg samples: ", num_bkg)
+    print("sig samples: ", num_sig)
+    print("bkg/sig = ", num_bkg/num_sig)
+
+    # Randomly sample from sig len(i_bkg) times WITH replacement
+    i_sig_upsampled = np.random.choice(i_sig, size=num_bkg, replace=True)
+    print("sig_upsampled/bkg = ", len(i_sig_upsampled)/num_bkg)
+
+    # Join our new train set together
+    new_train_array = np.vstack((MVA_train_array[i_bkg, :], MVA_train_array[i_sig_upsampled,:]))
+
+    # Reshuffle
+    train_index_perm = np.random.permutation( np.array(range(new_train_array.shape[0])) )
+    new_train_array  = new_train_array[train_index_perm,:]
+    return new_train_array
+
+
+#MVA_train_array = downsample_bkg(MVA_train_array, k=1)
+#MVA_train_array = upsample_sig(MVA_train_array)
 
 # UPDATE: Move this function to utils.
 def save_MVA_array(filename, treename, MVA_array, bnames):
@@ -241,9 +302,8 @@ bdt_dataset["weights_test"]  = MVA_test_array[:, 1]
 ## train and predict bdt
 bdt_model      =   buildBDT(bdt_dataset)
 bdt_results    =   predictBDT(bdt_model, bdt_dataset)
-train_mass_score_corr  =  round(pearsonr(bdt_results["pred_train"][MVA_train_array[:,0]==0], MVA_train_array[:, 2][MVA_train_array[:,0]==0])[0], 3)
-test_mass_score_corr   =  round(pearsonr(bdt_results["pred_test"][MVA_test_array[:,0]==0],  MVA_test_array[:, 2][MVA_test_array[:,0]==0])[0], 3)
-
+train_mass_score_corr  =  round(pearsonr(bdt_results["pred_train"][MVA_train_array[:,0]==0], MVA_train_array[:, 2][MVA_train_array[:,0]==0])[0], 4)
+test_mass_score_corr   =  round(pearsonr(bdt_results["pred_test"][MVA_test_array[:,0]==0],  MVA_test_array[:, 2][MVA_test_array[:,0]==0])[0], 4)
 
 
 ## plot the ROC curve
@@ -271,7 +331,7 @@ plt.savefig("prc_bdt.png")
 plt.close()
 
 # Save pred_train and pred_test
-def save_BDT_predictions(filename, bdt_results, train):
+def save_BDT_predictions(filename, bdt_results, train=False, newbdt=False):
     name = ""
     if train: 
         name = "train"
@@ -279,7 +339,12 @@ def save_BDT_predictions(filename, bdt_results, train):
         name = "test"
 
     f = TFile(filename, "update")
-    t = TTree("bdt_results_"+name, "BDT predictions")
+
+    bdt_version = ""
+    if newbdt: 
+        bdt_version = "new"
+
+    t = TTree(bdt_version+"bdt_results_"+name, "BDT predictions")
 
     # Fill variables
     pred_f = np.zeros(1, dtype=np.float64)
@@ -298,7 +363,7 @@ def save_BDT_predictions(filename, bdt_results, train):
 
 save_BDT_predictions(filename, bdt_results, train=True)
 save_BDT_predictions(filename, bdt_results, train=False)
-
+overlayed_fig5(MVA_train_array, MVA_test_array, bdt_results, ANN=False)
 
 ## plot Mbb profile plot
 # ===
@@ -368,6 +433,133 @@ plt.grid()
 plt.legend(fancybox=True)
 plt.savefig("profile_bdt_test_mass.png")
 plt.close()
+
+
+# Medians
+means_result = binned_statistic(MVA_test_array[:, 2][MVA_test_array[:,0]==0], 
+                                bdt_results["pred_test"][MVA_test_array[:,0]==0], 
+                                bins=10, range=[mass_range_low, mass_range_high], statistic='median')
+med = means_result.statistic
+bin_edges = means_result.bin_edges
+bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
+bin_number = means_result.binnumber
+plt.plot(bin_centers, med, linestyle='none', marker='o', markersize=10, alpha=0.7, label="median bkg")
+plt.title("BDT on Test")
+lowest = np.amin(med)
+print(med)
+plt.legend()
+plt.grid()
+plt.savefig("median_bdt_test.png")
+plt.close()
+
+# #################################################
+# #               MATT BDT                        #
+# #################################################
+# ## train and predict bdt
+# bdt_model      =   buildBDT_new(bdt_dataset)
+# bdt_results    =   predictBDT(bdt_model, bdt_dataset)
+# train_mass_score_corr  =  round(pearsonr(bdt_results["pred_train"][MVA_train_array[:,0]==0], MVA_train_array[:, 2][MVA_train_array[:,0]==0])[0], 4)
+# test_mass_score_corr   =  round(pearsonr(bdt_results["pred_test"][MVA_test_array[:,0]==0],  MVA_test_array[:, 2][MVA_test_array[:,0]==0])[0], 4)
+
+
+# ## plot the ROC curve
+# plt.figure()
+# plt.plot(  bdt_results["roc_train"][1],  bdt_results["roc_train"][0], 
+#            label="roc training set, AUC="+str(bdt_results["auc_train"])+ " rho(mass,score)="+str(train_mass_score_corr))
+# plt.plot(  bdt_results["roc_test"][1],  bdt_results["roc_test"][0], 
+#            label="roc test set, AUC="+str(bdt_results["auc_test"])+ " rho(mass,score)="+str(test_mass_score_corr))
+# plt.legend()
+# plt.xlabel("Signal Eff")
+# plt.ylabel("Background Eff")
+# plt.savefig("roc_newbdt.png")
+# plt.close()
+
+# ## plot the PRC curve
+# plt.figure()
+# plt.plot(  bdt_results["prc_train"][1],  bdt_results["prc_train"][0], 
+#            label="prc training set, AUC="+str(bdt_results["auc_prc_train"])+ " rho(mass,score)="+str(train_mass_score_corr))
+# plt.plot(  bdt_results["prc_test"][1],  bdt_results["prc_test"][0], 
+#            label="prc test set, AUC="+str(bdt_results["auc_prc_test"])+ " rho(mass,score)="+str(test_mass_score_corr))
+# plt.legend()
+# plt.xlabel("recall")
+# plt.ylabel("precision")
+# plt.savefig("prc_newbdt.png")
+# plt.close()
+
+
+# save_BDT_predictions(filename, bdt_results, train=True, newbdt=True)
+# save_BDT_predictions(filename, bdt_results, train=False, newbdt=True)
+
+
+# ## plot Mbb profile plot
+# # ===
+# # TRAIN
+# # ===
+
+# # Background only
+# means_result = binned_statistic(MVA_train_array[:, 2][MVA_train_array[:,0]==0], 
+#                                 [bdt_results["pred_train"][MVA_train_array[:,0]==0], 
+#                                  bdt_results["pred_train"][MVA_train_array[:,0]==0]**2], 
+#                                 bins=10, range=[mass_range_low, mass_range_high], statistic='mean')
+# means, means2 = means_result.statistic
+# standard_deviations = np.sqrt(means2 - means**2)
+# bin_edges = means_result.bin_edges
+# bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
+# plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="bkg", solid_capstyle='projecting', capsize=4)
+
+# # Signal only
+# means_result = binned_statistic(MVA_train_array[:, 2][MVA_train_array[:,0]==1], 
+#                                 [bdt_results["pred_train"][MVA_train_array[:,0]==1], 
+#                                  bdt_results["pred_train"][MVA_train_array[:,0]==1]**2], 
+#                                 bins=10, range=[mass_range_low, mass_range_high], statistic='mean')
+# means, means2 = means_result.statistic
+# standard_deviations = np.sqrt(means2 - means**2)
+# bin_edges = means_result.bin_edges
+# bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
+# plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=4)
+
+# # Show
+# plt.ylabel("Score")
+# plt.xlabel("Mbb (GeV)")
+# plt.grid()
+# plt.legend(fancybox=True)
+# plt.savefig("profile_newbdt_train_mass.png")
+# plt.close()
+
+
+# # === 
+# # TEST
+# # ===
+# # BKG only
+# means_result = binned_statistic(MVA_test_array[:, 2][MVA_test_array[:,0]==0], 
+#                                 [bdt_results["pred_test"][MVA_test_array[:,0]==0], 
+#                                  bdt_results["pred_test"][MVA_test_array[:,0]==0]**2], 
+#                                 bins=10, range=[mass_range_low, mass_range_high], statistic='mean')
+# means, means2 = means_result.statistic
+# standard_deviations = np.sqrt(means2 - means**2)
+# bin_edges = means_result.bin_edges
+# bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
+# plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="bkg", solid_capstyle='projecting', capsize=4)
+
+# # Signal only
+# means_result = binned_statistic(MVA_test_array[:, 2][MVA_test_array[:,0]==1], 
+#                                 [bdt_results["pred_test"][MVA_test_array[:,0]==1], 
+#                                  bdt_results["pred_test"][MVA_test_array[:,0]==1]**2], 
+#                                 bins=10, range=[mass_range_low, mass_range_high], statistic='mean')
+# means, means2 = means_result.statistic
+# standard_deviations = np.sqrt(means2 - means**2)
+# bin_edges = means_result.bin_edges
+# bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
+# plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=4)
+
+# # Show
+# plt.ylabel("Score")
+# plt.xlabel("Mbb (GeV)")
+# plt.grid()
+# plt.legend(fancybox=True)
+# plt.savefig("profile_newbdt_test_mass.png")
+# plt.close()
+
 
 #################################################
 #             TEST BDT ON SIDEBANDS             #
@@ -507,11 +699,14 @@ save_ANN_dataset(filename, "ann_dataset_test", ann_dataset, train=False)
 # Format example for lambda=10: megaROC['lamb10'] = miniROC
 # where miniROC has keys "lamb" (for check), "ann_results", "rho_train", "rho_test"
 megaROC = {}
-for lamb in [0.0, 2.0, 10.0]:
+for lamb in [10.0]:
 #for lamb in [20.0, 30.0, 100.0]:
 
-    model, hist = TrainANN( ann_dataset, lamb=lamb, clpretrain = 2, adpretrain = 2, 
-                            epoch=50,  batch_size = 256 , nMBBbins = 10)
+    # set gamma:
+    gam = 1.0
+
+    model, hist = TrainANN( ann_dataset, lamb=lamb, gam=gam, clpretrain = 2, adpretrain = 2, 
+                            epoch=50,  batch_size = 256 , nMBBbins = 10, lr=1e-3)
 
     plt.figure()
     ax1 = plt.subplot(311)  
@@ -531,6 +726,9 @@ for lamb in [0.0, 2.0, 10.0]:
     train_mass_score_corr  =  round(pearsonr(ann_results["pred_train"][MVA_train_array[:,0]==0], MVA_train_array[:, 2][MVA_train_array[:,0]==0])[0], 4)
     test_mass_score_corr   =  round(pearsonr(ann_results["pred_test"][MVA_test_array[:,0]==0],  MVA_test_array[:, 2][MVA_test_array[:,0]==0])[0], 4)
     
+    ## plot the fig5 curve:
+    overlayed_fig5(MVA_train_array, MVA_test_array, ann_results, ANN=True, lamb=lamb)
+
     ## plot the ROC curve
     plt.figure()
     plt.plot(  ann_results["roc_train"][1],  ann_results["roc_train"][0], 
@@ -622,6 +820,24 @@ for lamb in [0.0, 2.0, 10.0]:
     plt.savefig("profile_ann_test_mass_lambda{!s}.png".format(str(lamb)))
     plt.close()
 
+    # Medians:
+    means_result = binned_statistic(MVA_test_array[:, 2][MVA_test_array[:,0]==0], 
+                                    ann_results["pred_test"][MVA_test_array[:,0]==0], 
+                                    bins=10, range=[mass_range_low, mass_range_high], statistic='median')
+    med = means_result.statistic
+    bin_edges = means_result.bin_edges
+    bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
+    bin_number = means_result.binnumber
+    plt.plot(bin_centers, med, linestyle='none', marker='o', markersize=10, alpha=0.7, label="median bkg")
+    plt.title("ANN on Test, lamb = " + str(lamb))
+    lowest = np.amin(med)
+    plt.legend()
+    plt.grid()
+    plt.ylabel("Score")
+    plt.xlabel("Mbb (GeV)")
+    plt.savefig("median_ann_test_mass_lambda{!s}.png".format(str(lamb)))
+    plt.close()
+
     # ========== #
     # Compiling data for the megaROC curve, combining the results of the ROC curves of the all lambdas tested
     miniROC = {}
@@ -663,8 +879,6 @@ for lamb in [0.0, 2.0, 10.0]:
 
     save_ANN_predictions(filename, "ann_results_pred_train"+"_lamb"+str(lamb), ann_results, train=True)
     save_ANN_predictions(filename, "ann_results_pred_test"+"_lamb"+str(lamb), ann_results, train=False)
-
-
 
 # Finally, create the megaROC curve. Test with just the test data.
 plt.figure()
