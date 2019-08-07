@@ -188,33 +188,33 @@ def TrainANN(dataset, lamb=1.0, gam=1.0, clpretrain = 50, adpretrain = 50,
     Y_test_bkg = Y_test[ Y_test[:,-1]==0]
 
 
-    # ===== Artificial Augment
-    # Takes X_train_bkg and for every training example, duplicates
-    # it nMBBbins times and feeds it a faked Y_train_bkg label.
-    # This is for use with X_train_bkg because the classifier should
-    # not be fed the same example 10 times because nothing is changing
-    # for it (the label for the classifier is just 1 or 0).
-    new_X_train_bkg = []
-    new_Y_train_bkg = []
-    new_weights_train_bkg = []
-    for i in range(0, X_train_bkg.shape[0]):
-        for n in range(0, nMBBbins):
-            new_X_train_bkg.append(X_train_bkg[i])
-            Y_onehot = np.zeros(Y_train[i, :].shape)
-            Y_onehot[n] = 1
-            #if(np.random() > 0.95): print(Y_onehot)
-            new_Y_train_bkg.append(Y_onehot)
-            new_weights_train_bkg.append(weights_train_bkg[i])
-    X_train_bkg = np.array(new_X_train_bkg)
-    Y_train_bkg = np.array(new_Y_train_bkg)
-    weights_train_bkg = np.array(new_weights_train_bkg)
-    print("shape shape shape!! : " + str(X_train_bkg.shape))
-    print("shape shape shape!! : " + str(X_train.shape))
+    # # ===== Artificial Augment
+    # # Takes X_train_bkg and for every training example, duplicates
+    # # it nMBBbins times and feeds it a faked Y_train_bkg label.
+    # # This is for use with X_train_bkg because the classifier should
+    # # not be fed the same example 10 times because nothing is changing
+    # # for it (the label for the classifier is just 1 or 0).
+    # new_X_train_bkg = []
+    # new_Y_train_bkg = []
+    # new_weights_train_bkg = []
+    # for i in range(0, X_train_bkg.shape[0]):
+    #     for n in range(0, nMBBbins):
+    #         new_X_train_bkg.append(X_train_bkg[i])
+    #         Y_onehot = np.zeros(Y_train[i, :].shape)
+    #         Y_onehot[n] = 1
+    #         #if(np.random() > 0.95): print(Y_onehot)
+    #         new_Y_train_bkg.append(Y_onehot)
+    #         new_weights_train_bkg.append(weights_train_bkg[i])
+    # X_train_bkg = np.array(new_X_train_bkg)
+    # Y_train_bkg = np.array(new_Y_train_bkg)
+    # weights_train_bkg = np.array(new_weights_train_bkg)
+    # print("shape shape shape!! : " + str(X_train_bkg.shape))
+    # print("shape shape shape!! : " + str(X_train.shape))
 
-    np.random.seed(10)
-    train_index_perm = np.random.permutation( np.array(range(X_train_bkg.shape[0])) )
-    X_train_bkg  = X_train_bkg[train_index_perm,:]
-    Y_train_bkg   = Y_train_bkg[train_index_perm,:]
+    # np.random.seed(10)
+    # train_index_perm = np.random.permutation( np.array(range(X_train_bkg.shape[0])) )
+    # X_train_bkg  = X_train_bkg[train_index_perm,:]
+    # Y_train_bkg   = Y_train_bkg[train_index_perm,:]
 
 
     ## get the network model and set training hyper parameters
@@ -224,7 +224,7 @@ def TrainANN(dataset, lamb=1.0, gam=1.0, clpretrain = 50, adpretrain = 50,
 
 
     ## === load old weights:
-    #model.load_weights("../LOCAL/L19/ANN_lambda10.0_clpretrain2_adpretrain2_epoch50_minibatch256_mBBbins10_model_weights.h5")
+    #model.load_weights("ANN_lambda10.0_clpretrain2_adpretrain2_epoch50_minibatch256_mBBbins10_model_weights.h5")
     #print("loaded old weights")
     ## ===
 
@@ -422,6 +422,7 @@ def predictANN(model, dataset):
 
     auc_prc_train = round(auc(prc_train[1], prc_train[0], reorder=True), 3)
     auc_prc_test = round(auc(prc_test[1], prc_test[0], reorder=True), 3)
+
 
     results = {"pred_train":    pred_train,
                "pred_test":     pred_test, 

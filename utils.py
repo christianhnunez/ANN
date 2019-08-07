@@ -151,4 +151,113 @@ def overlayed_fig5(MVA_train_array, MVA_test_array, results, ANN=True, lamb=-1):
         plt.savefig("fig5_bdt.png")
     plt.close()
 
+
+# BACKGROUND DOWNSAMPLING
+# function: downsample_bkg()
+# args:
+#   MVA_train_array is (n_training_examples, len(features+label+eventweight+mbb)) 2D matrix
+#   k is the final ratio of bkg:sig (k:1).
+def downsample_bkg(MVA_train_array, k=1):
+    # Set a k-value
+    # where the resulting train array will have a k:1 bkg:sig ratio
+    # Try downsampling:
+    i_bkg = np.where(MVA_train_array[:, 0] == 0)[0]
+    i_sig = np.where(MVA_train_array[:, 0] == 1)[0]
+
+    # Print sample counts
+    num_bkg = len(i_bkg)
+    num_sig = len(i_sig)
+    print("bkg samples: ", num_bkg)
+    print("sig samples: ", num_sig)
+    print("bkg/sig = ", num_bkg/num_sig)
+
+    # Randomly sample from bkg len(i_sig) times without replacement
+    i_bkg_downsampled = np.random.choice(i_bkg, size=k*num_sig, replace=False)
+    print("bkg_downsampled/sig = ", len(i_bkg_downsampled)/num_sig)
+
+    # Join our new train set together
+    new_train_array = np.vstack((MVA_train_array[i_bkg_downsampled, :], MVA_train_array[i_sig,:]))
+
+    # Reshuffle
+    train_index_perm = np.random.permutation( np.array(range(new_train_array.shape[0])) )
+    new_train_array  = new_train_array[train_index_perm,:]
+    return new_train_array
+
+def upsample_sig(MVA_train_array):
+    i_bkg = np.where(MVA_train_array[:, 0] == 0)[0]
+    i_sig = np.where(MVA_train_array[:, 0] == 1)[0]
+
+    # Print sample counts
+    num_bkg = len(i_bkg)
+    num_sig = len(i_sig)
+    print("bkg samples: ", num_bkg)
+    print("sig samples: ", num_sig)
+    print("bkg/sig = ", num_bkg/num_sig)
+
+    # Randomly sample from sig len(i_bkg) times WITH replacement
+    i_sig_upsampled = np.random.choice(i_sig, size=num_bkg, replace=True)
+    print("sig_upsampled/bkg = ", len(i_sig_upsampled)/num_bkg)
+
+    # Join our new train set together
+    new_train_array = np.vstack((MVA_train_array[i_bkg, :], MVA_train_array[i_sig_upsampled,:]))
+
+    # Reshuffle
+    train_index_perm = np.random.permutation( np.array(range(new_train_array.shape[0])) )
+    new_train_array  = new_train_array[train_index_perm,:]
+    return new_train_array
+
+def getPearsonDist(model, dataset, results, MVA_test_array, lamb=-9999, parts=10, ANN=True, sideband=False):
+    X_test = dataset['X_test']
+    Y_test = dataset['Y_test']
+    overall_r   =  round(pearsonr(results["pred_test"][MVA_test_array[:,0]==0],  MVA_test_array[:, 2][MVA_test_array[:,0]==0])[0], 5)
+
+    # n=parts measurements and get spread for test:
+    X_val = np.array_split(X_test, parts)
+    Y_val = np.array_split(Y_test, parts)
+    MVA_val = np.array(np.array_split(MVA_test_array, parts))
+
+    print(MVA_val.shape)
+    print(MVA_val[0].shape)
+
+    pearson_list = []
+    for i in range(0, parts):
+        if ANN==True:
+            pred_val = model.predict(X_val[i])[:,0]
+        else:
+            pred_val = model.decision_function(X_val[i])
+        test_mass_score_corr   =  round(pearsonr(pred_val[MVA_val[i][:,0]==0],  MVA_val[i][:, 2][MVA_val[i][:,0]==0])[0], 5)
+        pearson_list.append(test_mass_score_corr)
+    pearson_avg = np.average(pearson_list)
+    pearson_std = np.std(pearson_list)
+    
+    # Write to file
+    if ANN==True:
+        if sideband:
+            file = open("pearsonlist_ANN_SIDEBAND_lambda{!s}.txt".format(str(lamb)), "w+")
+        else:
+            file = open("pearsonlist_ANN_lambda{!s}.txt".format(str(lamb)), "w+")
+    else:
+        if sideband:
+            file = open("pearsonlist_BDT_SIDEBAND.txt", "w+")
+        else:
+            file = open("pearsonlist_BDT.txt", "w+")
+    file.write("=== "+str(parts)+"-fold Pearson's r ===\n" )
+    file.write("Overall Pearson's r = " + str(overall_r) + "\n")
+    file.write("Pearson's r list for the folds: " + str(pearson_list) + "\n")
+    file.write("Pearson's r average = " + str(pearson_avg) + "\n")
+    file.write("Pearson's r std_dev = " + str(pearson_std) + "\n")
+    file.write("Fold size = " + str(X_val[i].shape))
+    file.close()
+
+    # Distribution of pearson's r values
+    label = "Pearson's r (" + str(parts) + "-fold x-val): " + str(pearson_avg) + " +/- " + str(pearson_std)
+    plt.hist(np.array(pearson_list), bins=10, alpha=0.7, label=label)
+    if ANN:
+        plt.title("lamb = " + str(lamb) + " Pearson's r distribution on x-val")
+        plt.savefig("pearsonr_ann_lambda{!s}.png".format(str(lamb)))
+    else:
+        plt.title("BDT Pearson's r distribution on x-val")
+        plt.savefig("pearsonr_BDT.png")
+    plt.close()
+
     

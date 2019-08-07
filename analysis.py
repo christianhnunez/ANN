@@ -12,7 +12,7 @@ import numpy as np
 from array import array
 from copy import deepcopy
 from bdt import buildBDT, buildBDT_new, predictBDT, predictBDTonSideband
-from utils import overlayed_fig5
+from utils import overlayed_fig5, getPearsonDist
 import matplotlib
 matplotlib.use("PS")
 import matplotlib.pyplot as plt
@@ -190,66 +190,11 @@ test_index_perm  = np.random.permutation( np.array(range(MVA_test_array.shape[0]
 MVA_train_array  = MVA_train_array[train_index_perm,:]
 MVA_test_array   = MVA_test_array[test_index_perm,:]
 
-print("\n\n FOR TESTING: Taking only 20 percent of train and test. \n\n")
-MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.20)]
-MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.20)]
-print("MVA_train_array length = " + str(MVA_train_array.shape[0]))
-print("MVA_test_array length = " + str(MVA_test_array.shape[0]))
-
-# BACKGROUND DOWNSAMPLING
-# function: downsample_bkg()
-# args:
-#   MVA_train_array is (n_training_examples, len(features+label+eventweight+mbb)) 2D matrix
-#   k is the final ratio of bkg:sig (k:1).
-def downsample_bkg(MVA_train_array, k=1):
-    # Set a k-value
-    # where the resulting train array will have a k:1 bkg:sig ratio
-    # Try downsampling:
-    i_bkg = np.where(MVA_train_array[:, 0] == 0)[0]
-    i_sig = np.where(MVA_train_array[:, 0] == 1)[0]
-
-    # Print sample counts
-    num_bkg = len(i_bkg)
-    num_sig = len(i_sig)
-    print("bkg samples: ", num_bkg)
-    print("sig samples: ", num_sig)
-    print("bkg/sig = ", num_bkg/num_sig)
-
-    # Randomly sample from bkg len(i_sig) times without replacement
-    i_bkg_downsampled = np.random.choice(i_bkg, size=k*num_sig, replace=False)
-    print("bkg_downsampled/sig = ", len(i_bkg_downsampled)/num_sig)
-
-    # Join our new train set together
-    new_train_array = np.vstack((MVA_train_array[i_bkg_downsampled, :], MVA_train_array[i_sig,:]))
-
-    # Reshuffle
-    train_index_perm = np.random.permutation( np.array(range(new_train_array.shape[0])) )
-    new_train_array  = new_train_array[train_index_perm,:]
-    return new_train_array
-
-def upsample_sig(MVA_train_array):
-    i_bkg = np.where(MVA_train_array[:, 0] == 0)[0]
-    i_sig = np.where(MVA_train_array[:, 0] == 1)[0]
-
-    # Print sample counts
-    num_bkg = len(i_bkg)
-    num_sig = len(i_sig)
-    print("bkg samples: ", num_bkg)
-    print("sig samples: ", num_sig)
-    print("bkg/sig = ", num_bkg/num_sig)
-
-    # Randomly sample from sig len(i_bkg) times WITH replacement
-    i_sig_upsampled = np.random.choice(i_sig, size=num_bkg, replace=True)
-    print("sig_upsampled/bkg = ", len(i_sig_upsampled)/num_bkg)
-
-    # Join our new train set together
-    new_train_array = np.vstack((MVA_train_array[i_bkg, :], MVA_train_array[i_sig_upsampled,:]))
-
-    # Reshuffle
-    train_index_perm = np.random.permutation( np.array(range(new_train_array.shape[0])) )
-    new_train_array  = new_train_array[train_index_perm,:]
-    return new_train_array
-
+# print("\n\n FOR TESTING: Taking only 20 percent of train and test. \n\n")
+# MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.20)]
+# MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.20)]
+# print("MVA_train_array length = " + str(MVA_train_array.shape[0]))
+# print("MVA_test_array length = " + str(MVA_test_array.shape[0]))
 
 #MVA_train_array = downsample_bkg(MVA_train_array, k=1)
 #MVA_train_array = upsample_sig(MVA_train_array)
@@ -281,7 +226,7 @@ def save_MVA_array(filename, treename, MVA_array, bnames):
     f.Close()
 
 # Save the MVA arrays for train and test
-branch_names = ["label", "eventWeight", "mBB"] + var_ANN
+branch_names = ["label", "eventWeight", "mBB"] + var_NEW
 save_MVA_array(filename, "MVA_train_array", MVA_train_array, branch_names)
 save_MVA_array(filename, "MVA_test_array", MVA_test_array, branch_names)
 
@@ -302,9 +247,11 @@ bdt_dataset["weights_test"]  = MVA_test_array[:, 1]
 ## train and predict bdt
 bdt_model      =   buildBDT(bdt_dataset)
 bdt_results    =   predictBDT(bdt_model, bdt_dataset)
-train_mass_score_corr  =  round(pearsonr(bdt_results["pred_train"][MVA_train_array[:,0]==0], MVA_train_array[:, 2][MVA_train_array[:,0]==0])[0], 4)
-test_mass_score_corr   =  round(pearsonr(bdt_results["pred_test"][MVA_test_array[:,0]==0],  MVA_test_array[:, 2][MVA_test_array[:,0]==0])[0], 4)
+train_mass_score_corr  =  round(pearsonr(bdt_results["pred_train"][MVA_train_array[:,0]==0], MVA_train_array[:, 2][MVA_train_array[:,0]==0])[0], 5)
+test_mass_score_corr   =  round(pearsonr(bdt_results["pred_test"][MVA_test_array[:,0]==0],  MVA_test_array[:, 2][MVA_test_array[:,0]==0])[0], 5)
 
+# get Pearson distribution:
+getPearsonDist(bdt_model, bdt_dataset, bdt_results, MVA_test_array,parts=10, ANN=False)
 
 ## plot the ROC curve
 plt.figure()
@@ -452,115 +399,6 @@ plt.grid()
 plt.savefig("median_bdt_test.png")
 plt.close()
 
-# #################################################
-# #               MATT BDT                        #
-# #################################################
-# ## train and predict bdt
-# bdt_model      =   buildBDT_new(bdt_dataset)
-# bdt_results    =   predictBDT(bdt_model, bdt_dataset)
-# train_mass_score_corr  =  round(pearsonr(bdt_results["pred_train"][MVA_train_array[:,0]==0], MVA_train_array[:, 2][MVA_train_array[:,0]==0])[0], 4)
-# test_mass_score_corr   =  round(pearsonr(bdt_results["pred_test"][MVA_test_array[:,0]==0],  MVA_test_array[:, 2][MVA_test_array[:,0]==0])[0], 4)
-
-
-# ## plot the ROC curve
-# plt.figure()
-# plt.plot(  bdt_results["roc_train"][1],  bdt_results["roc_train"][0], 
-#            label="roc training set, AUC="+str(bdt_results["auc_train"])+ " rho(mass,score)="+str(train_mass_score_corr))
-# plt.plot(  bdt_results["roc_test"][1],  bdt_results["roc_test"][0], 
-#            label="roc test set, AUC="+str(bdt_results["auc_test"])+ " rho(mass,score)="+str(test_mass_score_corr))
-# plt.legend()
-# plt.xlabel("Signal Eff")
-# plt.ylabel("Background Eff")
-# plt.savefig("roc_newbdt.png")
-# plt.close()
-
-# ## plot the PRC curve
-# plt.figure()
-# plt.plot(  bdt_results["prc_train"][1],  bdt_results["prc_train"][0], 
-#            label="prc training set, AUC="+str(bdt_results["auc_prc_train"])+ " rho(mass,score)="+str(train_mass_score_corr))
-# plt.plot(  bdt_results["prc_test"][1],  bdt_results["prc_test"][0], 
-#            label="prc test set, AUC="+str(bdt_results["auc_prc_test"])+ " rho(mass,score)="+str(test_mass_score_corr))
-# plt.legend()
-# plt.xlabel("recall")
-# plt.ylabel("precision")
-# plt.savefig("prc_newbdt.png")
-# plt.close()
-
-
-# save_BDT_predictions(filename, bdt_results, train=True, newbdt=True)
-# save_BDT_predictions(filename, bdt_results, train=False, newbdt=True)
-
-
-# ## plot Mbb profile plot
-# # ===
-# # TRAIN
-# # ===
-
-# # Background only
-# means_result = binned_statistic(MVA_train_array[:, 2][MVA_train_array[:,0]==0], 
-#                                 [bdt_results["pred_train"][MVA_train_array[:,0]==0], 
-#                                  bdt_results["pred_train"][MVA_train_array[:,0]==0]**2], 
-#                                 bins=10, range=[mass_range_low, mass_range_high], statistic='mean')
-# means, means2 = means_result.statistic
-# standard_deviations = np.sqrt(means2 - means**2)
-# bin_edges = means_result.bin_edges
-# bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
-# plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="bkg", solid_capstyle='projecting', capsize=4)
-
-# # Signal only
-# means_result = binned_statistic(MVA_train_array[:, 2][MVA_train_array[:,0]==1], 
-#                                 [bdt_results["pred_train"][MVA_train_array[:,0]==1], 
-#                                  bdt_results["pred_train"][MVA_train_array[:,0]==1]**2], 
-#                                 bins=10, range=[mass_range_low, mass_range_high], statistic='mean')
-# means, means2 = means_result.statistic
-# standard_deviations = np.sqrt(means2 - means**2)
-# bin_edges = means_result.bin_edges
-# bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
-# plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=4)
-
-# # Show
-# plt.ylabel("Score")
-# plt.xlabel("Mbb (GeV)")
-# plt.grid()
-# plt.legend(fancybox=True)
-# plt.savefig("profile_newbdt_train_mass.png")
-# plt.close()
-
-
-# # === 
-# # TEST
-# # ===
-# # BKG only
-# means_result = binned_statistic(MVA_test_array[:, 2][MVA_test_array[:,0]==0], 
-#                                 [bdt_results["pred_test"][MVA_test_array[:,0]==0], 
-#                                  bdt_results["pred_test"][MVA_test_array[:,0]==0]**2], 
-#                                 bins=10, range=[mass_range_low, mass_range_high], statistic='mean')
-# means, means2 = means_result.statistic
-# standard_deviations = np.sqrt(means2 - means**2)
-# bin_edges = means_result.bin_edges
-# bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
-# plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="bkg", solid_capstyle='projecting', capsize=4)
-
-# # Signal only
-# means_result = binned_statistic(MVA_test_array[:, 2][MVA_test_array[:,0]==1], 
-#                                 [bdt_results["pred_test"][MVA_test_array[:,0]==1], 
-#                                  bdt_results["pred_test"][MVA_test_array[:,0]==1]**2], 
-#                                 bins=10, range=[mass_range_low, mass_range_high], statistic='mean')
-# means, means2 = means_result.statistic
-# standard_deviations = np.sqrt(means2 - means**2)
-# bin_edges = means_result.bin_edges
-# bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
-# plt.errorbar(x=bin_centers, y=means, yerr=standard_deviations, linestyle='none', marker='o', markersize=4, alpha=0.7, label="sig", solid_capstyle='projecting', capsize=4)
-
-# # Show
-# plt.ylabel("Score")
-# plt.xlabel("Mbb (GeV)")
-# plt.grid()
-# plt.legend(fancybox=True)
-# plt.savefig("profile_newbdt_test_mass.png")
-# plt.close()
-
-
 #################################################
 #             TEST BDT ON SIDEBANDS             #
 #################################################
@@ -606,6 +444,23 @@ if testBDTonSidebands:
     plt.savefig("SIDEBAND_prc_BDT.png")
     plt.close()
 
+    # medians
+    means_result = binned_statistic(real_data[:, 2][real_data[:,0]==0], 
+                                bdt_sideband_results["pred_test"][real_data[:,0]==0], 
+                                bins=10, range=[mass_range_low, mass_range_high], statistic='median')
+    med = means_result.statistic
+    bin_edges = means_result.bin_edges
+    bin_centers = (bin_edges[:-1] + bin_edges[1:])/2.
+    bin_number = means_result.binnumber
+    plt.plot(bin_centers, med, linestyle='none', marker='o', markersize=10, alpha=0.7, label="median bkg")
+    plt.title("BDT on Sideband")
+    lowest = np.amin(med)
+    print(med)
+    plt.legend()
+    plt.grid()
+    plt.savefig("median_bdt_SIDEBAND.png")
+    plt.close()
+
     def save_BDT_sideband_predictions(filename, bdt_results, train):
         name = ""
         if train: 
@@ -632,6 +487,7 @@ if testBDTonSidebands:
         f.Close()
 
     save_BDT_sideband_predictions(filename, bdt_sideband_results, train=False)
+    getPearsonDist(bdt_model, bdt_sideband, bdt_sideband_results, real_data, parts=10, ANN=False, sideband=True)
 
 ###########
 ### ANN ###
@@ -699,14 +555,14 @@ save_ANN_dataset(filename, "ann_dataset_test", ann_dataset, train=False)
 # Format example for lambda=10: megaROC['lamb10'] = miniROC
 # where miniROC has keys "lamb" (for check), "ann_results", "rho_train", "rho_test"
 megaROC = {}
-for lamb in [10.0]:
-#for lamb in [20.0, 30.0, 100.0]:
+#for lamb in [0, 2.0, 10.0]:
+for lamb in [0]:
 
     # set gamma:
     gam = 1.0
 
     model, hist = TrainANN( ann_dataset, lamb=lamb, gam=gam, clpretrain = 2, adpretrain = 2, 
-                            epoch=50,  batch_size = 256 , nMBBbins = 10, lr=1e-3)
+                            epoch=120,  batch_size = 256 , nMBBbins = 10, lr=1e-4)
 
     plt.figure()
     ax1 = plt.subplot(311)  
@@ -723,9 +579,12 @@ for lamb in [10.0]:
     plt.close()
 
     ann_results = predictANN(model, ann_dataset)
-    train_mass_score_corr  =  round(pearsonr(ann_results["pred_train"][MVA_train_array[:,0]==0], MVA_train_array[:, 2][MVA_train_array[:,0]==0])[0], 4)
-    test_mass_score_corr   =  round(pearsonr(ann_results["pred_test"][MVA_test_array[:,0]==0],  MVA_test_array[:, 2][MVA_test_array[:,0]==0])[0], 4)
+    train_mass_score_corr  =  round(pearsonr(ann_results["pred_train"][MVA_train_array[:,0]==0], MVA_train_array[:, 2][MVA_train_array[:,0]==0])[0], 5)
+    test_mass_score_corr   =  round(pearsonr(ann_results["pred_test"][MVA_test_array[:,0]==0],  MVA_test_array[:, 2][MVA_test_array[:,0]==0])[0], 5)
     
+    # Write Pearson dist to file
+    getPearsonDist(model, ann_dataset, ann_results, MVA_test_array, lamb, parts=10, ANN=True)
+
     ## plot the fig5 curve:
     overlayed_fig5(MVA_train_array, MVA_test_array, ann_results, ANN=True, lamb=lamb)
 
