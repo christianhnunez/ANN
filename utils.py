@@ -3,7 +3,7 @@ from ROOT import TFile, TTree
 import root_numpy as rnp
 from HistoLib import HistoTool, PhysicsProcess, Cut, Make1DPlots, DrawPlotsWithCutsForEachSample, mBB_Binning_long
 from rootpy.io import root_open
-from scipy.stats import pearsonr, binned_statistic
+from scipy.stats import pearsonr, binned_statistic, norm
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -152,6 +152,145 @@ def overlayed_fig5(MVA_train_array, MVA_test_array, results, ANN=True, lamb=-1):
     plt.close()
 
 
+def save_ANN_dataset(filename, treename, ann_dataset, train):
+    name = ""
+    if train:
+        name = "Y_train"
+    else:
+        name = "Y_test"
+
+    f = TFile(filename, "update")
+    t = TTree(treename, "ann_dataset")
+
+    # Fill variables
+    fill_vars = []
+    for i in range(ann_dataset[name].shape[1]):
+        fill_vars.append(np.zeros(1, dtype=np.float64))
+
+    # Create all branches
+    for j in range(ann_dataset[name].shape[1]):
+        t.Branch("bin"+str(j), fill_vars[j], "bin"+str(j)+"/D")
+
+    # Fill the tree
+    # Outer loop: over all events (inputs)
+    for i in range(ann_dataset[name].shape[0]):
+        # Inner loop: over all input vars
+        for j in range(len(fill_vars)):
+            fill_vars[j][0] = (ann_dataset[name])[i,j]
+        t.Fill()
+    
+    # Write and close file
+    f.Write()
+    f.Close()
+
+# Save pred_train and pred_test
+def save_BDT_predictions(filename, bdt_results, train=False, newbdt=False):
+    name = ""
+    if train: 
+        name = "train"
+    else:
+        name = "test"
+
+    f = TFile(filename, "update")
+
+    bdt_version = ""
+    if newbdt: 
+        bdt_version = "new"
+
+    t = TTree(bdt_version+"bdt_results_"+name, "BDT predictions")
+
+    # Fill variables
+    pred_f = np.zeros(1, dtype=np.float64)
+
+    # Create all branches
+    t.Branch("pred_"+name, pred_f, "pred_"+name+"/D")
+
+    # Fill the tree
+    for i in range(len(bdt_results["pred_"+name])):
+        pred_f[0] = bdt_results["pred_"+name][i]
+        t.Fill()
+        
+    # Write and close file
+    f.Write()
+    f.Close()
+
+def save_MVA_array(filename, treename, MVA_array, bnames):
+    f = TFile(filename, "update")
+    t = TTree(treename, "MVA_array")
+
+    # Fill variables in order of MVA_test_array inputs (see bnames for list)
+    fill_vars = []
+    for i in range(MVA_array.shape[1]):
+        fill_vars.append(np.zeros(1, dtype=np.float64))
+
+    # Create all branches
+    for i in range(MVA_array.shape[1]):
+        t.Branch(bnames[i], fill_vars[i], bnames[i]+"/D")
+
+    # Fill the tree
+    # Outer loop: over all events (inputs)
+    for i in range(MVA_array.shape[0]):
+        # Inner loop: over all input vars (label, eventWeight, etc.)
+        for j in range(len(fill_vars)):
+            fill_vars[j][0] = np.array(MVA_array[i, j])
+        t.Fill()
+    
+    # Write and close file
+    f.Write()
+    f.Close()
+
+def save_BDT_sideband_predictions(filename, bdt_results, train):
+        name = ""
+        if train: 
+            name = "train"
+        else:
+            name = "test"
+
+        f = TFile(filename, "update")
+        t = TTree("bdt_sideband_results_"+name, "BDT predictions")
+
+        # Fill variables
+        pred_f = np.zeros(1, dtype=np.float64)
+
+        # Create all branches
+        t.Branch("pred_"+name, pred_f, "pred_"+name+"/D")
+
+        # Fill the tree
+        for i in range(len(bdt_results["pred_"+name])):
+            pred_f[0] = bdt_results["pred_"+name][i]
+            t.Fill()
+            
+        # Write and close file
+        f.Write()
+        f.Close()
+
+def save_ANN_predictions(filename, treename, ann_results, train):
+    name = ""
+    if train:
+        name = "pred_train"
+    else:
+        name = "pred_test"
+
+    f = TFile(filename, "update")
+    t = TTree(treename, "ann_dataset")
+
+    # Fill variables
+    print("\n\n\n ann_results[name] SHAPE: ", ann_results[name].shape)
+    pred_f = np.zeros(1, dtype=np.float64)
+
+    # Create branches
+    t.Branch(name, pred_f, name+"/D")
+
+    # Fill the tree
+    # Outer loop: over all events (inputs)
+    for i in range(ann_results[name].shape[0]):
+        pred_f[0] = ann_results[name][i]
+        t.Fill()
+    
+    # Write and close file
+    f.Write()
+    f.Close()
+
 # BACKGROUND DOWNSAMPLING
 # function: downsample_bkg()
 # args:
@@ -205,6 +344,71 @@ def upsample_sig(MVA_train_array):
     train_index_perm = np.random.permutation( np.array(range(new_train_array.shape[0])) )
     new_train_array  = new_train_array[train_index_perm,:]
     return new_train_array
+
+####################
+# Pearson's r work #
+####################
+
+def fisherTransform(r):
+    return np.arctanh(r)
+
+# Assumptions: All sample pairs are iid and follow bivariate normal dist.
+# r = same correlation, n = sample size, alpha = test size
+def getPearsonCI(r, n, alpha):
+    # For a confidence interval of 95%, alpha = 0.05
+    # 100(1-alpha)%CI : rho \in [tanh(arctanh(r) - z_{alpha/2}SE,
+    #                            tanh(arctanh(r) + z_{alpha/2}SE)]
+    # Now: z_{alpha/2} = invNorm(alpha/2)
+    z = np.abs(norm.ppf(alpha/2))
+
+    # Standard error in the Fisher space
+    SE = 1/np.sqrt(n - 3)
+
+    # Compute upper and lower bound:
+    lower = np.tanh(np.arctanh(r) - z*SE)
+    upper = np.tanh(np.arctanh(r) + z*SE)
+
+    return (lower, upper)
+
+
+# Want 95% and 99% confidence intervals: percentile_list = [95, 99]
+def publishPearson(r, n, percentile_list, ANN=True, sideband=False):
+    # Write to file
+    if ANN==True:
+        if sideband:
+            file = open("pearsonCONF_ANN_SIDEBAND_lambda{!s}.txt".format(str(lamb)), "w+")
+        else:
+            file = open("pearsonCONF_ANN_lambda{!s}.txt".format(str(lamb)), "w+")
+    else:
+        if sideband:
+            file = open("pearsonCONF_BDT_SIDEBAND.txt", "w+")
+        else:
+            file = open("pearsonCONF_BDT.txt", "w+")
+
+    file.write("|=== Confidence Intervals for Pearson's r ===|\n")
+    file.write("Sample pearson r: " + str(r))
+    file.write(", n = " + str(n) + "\n")
+    file.write("Confidence intervals:\n")
+
+    for percentile in percentile_list:
+        alpha = (1-percentile)/100
+        CI = getPearsonCI(r, n, alpha)
+        file.write(str(percentile) + "% CI: " + str(CI) + "\n")
+
+def scatterMassScore(MVA_array, results, lamb=-9999):
+    mbb = MVA_array[:, 2]
+    score = results["pred_test"]
+    plt.scatter(mbb, score)
+    plt.ylabel("score")
+    plt.xlabel("mbb")
+    plt.grid()
+    if lamb != -9999:
+        plt.title("ANN on test, lambda = " + str(lamb) + ", n = " + str(MVA_array.shape[0]) + ")")
+        plt.savefig("scatter_ANN_mass_score_lambda{!s}.png".format(str(lamb)))
+    else:
+        plt.title("BDT on test, (n = " + str(MVA_array.shape[0]) + ")")
+        plt.savefig("scatter_BDT_mass_score.png")
+    plt.close()
 
 def getPearsonDist(model, dataset, results, MVA_test_array, lamb=-9999, parts=10, ANN=True, sideband=False):
     X_test = dataset['X_test']

@@ -12,7 +12,7 @@ import numpy as np
 from array import array
 from copy import deepcopy
 from bdt import buildBDT, buildBDT_new, predictBDT, predictBDTonSideband
-from utils import overlayed_fig5, getPearsonDist
+from utils import overlayed_fig5, getPearsonDist, publishPearson, save_ANN_dataset, save_BDT_predictions, save_MVA_array, save_BDT_sideband_predictions, save_ANN_predictions
 import matplotlib
 matplotlib.use("PS")
 import matplotlib.pyplot as plt
@@ -44,18 +44,11 @@ testBDTonSidebands = False
 SAMPLES = {}
 SAMPLES["sherpa"] = PhysicsProcess("Sherpa Multi-b", "1for2cen_loose/tree_mcmjfullreweight_d.root ")
 SAMPLES["vbf"]    = PhysicsProcess("VBF H->bb",      "1for2cen_loose/tree_vbf_ade.root")
-# Old root files
-#SAMPLES["sherpa"] = PhysicsProcess("Sherpa Multi-b", "/eos/atlas/user/m/maklein/vbfhbb_mvainputs/cen2/tree_2central_sherpamj_de.root")
-#SAMPLES["vbf"]    = PhysicsProcess("VBF H->bb",      "/eos/atlas/user/m/maklein/vbfhbb_mvainputs/cen2/tree_2central_vbf_de.root")
-#SAMPLES["data"]   = PhysicsProcess("data",           "/eos/atlas/user/m/maklein/vbfhbb_mvainputs/cen2/tree_2central_201718.root")
 
 ## load all varibles
 for s in SAMPLES:
     for v in var_all:
         SAMPLES[s].AddEventVarFromTree(v)
-
-## make data event weight all 1
-#SAMPLES["data"].var["eventWeight"] = np.array([1]*len(SAMPLES["data"].var["eventWeight"]))
 
 ## make pTbb cuts
 for s in SAMPLES:
@@ -90,21 +83,6 @@ for s in SAMPLES:
     print (SAMPLES[s].var["eventWeight"])
     print (SAMPLES[s].var["mBB"])
 
-## blind data
-'''
-SAMPLES["data"].var["eventWeight"] = np.logical_or( SAMPLES["data"].var["mBB"]<100, SAMPLES["data"].var["mBB"]>140) * SAMPLES[s].var["eventWeight"]
-'''
-
-
-## example of make histograms
-'''
-outfile       = ROOT.TFile("output.root", "recreate")
-outfile.cd()
-DrawPlotsWithCutsForEachSample(DrawTool, SAMPLES,
-                               "mBB", "Mbb_pTbbCheck", xLabel="M(bb)", yLabel="Event", 
-                               cuts=pTBBcuts, norm=False)
-'''
-
 ## stack sample variables
 MVAInputs = {}
 for s in ["sherpa", "vbf"]:
@@ -137,7 +115,7 @@ for s in ["sherpa", "vbf"]:
 
 
 ############################
-### DERIVED VARIABLES (MATT)
+### DERIVED VARIABLES (NEW VARS)
 ###
 
 # Creating new variables:
@@ -196,34 +174,10 @@ MVA_test_array   = MVA_test_array[test_index_perm,:]
 # print("MVA_train_array length = " + str(MVA_train_array.shape[0]))
 # print("MVA_test_array length = " + str(MVA_test_array.shape[0]))
 
+# Down/up-sampling
 #MVA_train_array = downsample_bkg(MVA_train_array, k=1)
 #MVA_train_array = upsample_sig(MVA_train_array)
 
-# UPDATE: Move this function to utils.
-def save_MVA_array(filename, treename, MVA_array, bnames):
-    f = TFile(filename, "update")
-    t = TTree(treename, "MVA_array")
-
-    # Fill variables in order of MVA_test_array inputs (see bnames for list)
-    fill_vars = []
-    for i in range(MVA_array.shape[1]):
-        fill_vars.append(np.zeros(1, dtype=np.float64))
-
-    # Create all branches
-    for i in range(MVA_array.shape[1]):
-        t.Branch(bnames[i], fill_vars[i], bnames[i]+"/D")
-
-    # Fill the tree
-    # Outer loop: over all events (inputs)
-    for i in range(MVA_array.shape[0]):
-        # Inner loop: over all input vars (label, eventWeight, etc.)
-        for j in range(len(fill_vars)):
-            fill_vars[j][0] = np.array(MVA_array[i, j])
-        t.Fill()
-    
-    # Write and close file
-    f.Write()
-    f.Close()
 
 # Save the MVA arrays for train and test
 branch_names = ["label", "eventWeight", "mBB"] + var_NEW
@@ -253,6 +207,12 @@ test_mass_score_corr   =  round(pearsonr(bdt_results["pred_test"][MVA_test_array
 # get Pearson distribution:
 getPearsonDist(bdt_model, bdt_dataset, bdt_results, MVA_test_array,parts=10, ANN=False)
 
+# publishPearson stats:
+publishPearson(test_mass_score_corr, MVA_test_array.shape[0], percentile_list=[90,95,99, 99.9], ANN=False, sideband=False)
+
+# scatter mass vs. score
+scatterMassScore(MVA_test_array, bdt_results)
+
 ## plot the ROC curve
 plt.figure()
 plt.plot(  bdt_results["roc_train"][1],  bdt_results["roc_train"][0], 
@@ -276,37 +236,6 @@ plt.xlabel("recall")
 plt.ylabel("precision")
 plt.savefig("prc_bdt.png")
 plt.close()
-
-# Save pred_train and pred_test
-def save_BDT_predictions(filename, bdt_results, train=False, newbdt=False):
-    name = ""
-    if train: 
-        name = "train"
-    else:
-        name = "test"
-
-    f = TFile(filename, "update")
-
-    bdt_version = ""
-    if newbdt: 
-        bdt_version = "new"
-
-    t = TTree(bdt_version+"bdt_results_"+name, "BDT predictions")
-
-    # Fill variables
-    pred_f = np.zeros(1, dtype=np.float64)
-
-    # Create all branches
-    t.Branch("pred_"+name, pred_f, "pred_"+name+"/D")
-
-    # Fill the tree
-    for i in range(len(bdt_results["pred_"+name])):
-        pred_f[0] = bdt_results["pred_"+name][i]
-        t.Fill()
-        
-    # Write and close file
-    f.Write()
-    f.Close()
 
 save_BDT_predictions(filename, bdt_results, train=True)
 save_BDT_predictions(filename, bdt_results, train=False)
@@ -461,31 +390,6 @@ if testBDTonSidebands:
     plt.savefig("median_bdt_SIDEBAND.png")
     plt.close()
 
-    def save_BDT_sideband_predictions(filename, bdt_results, train):
-        name = ""
-        if train: 
-            name = "train"
-        else:
-            name = "test"
-
-        f = TFile(filename, "update")
-        t = TTree("bdt_sideband_results_"+name, "BDT predictions")
-
-        # Fill variables
-        pred_f = np.zeros(1, dtype=np.float64)
-
-        # Create all branches
-        t.Branch("pred_"+name, pred_f, "pred_"+name+"/D")
-
-        # Fill the tree
-        for i in range(len(bdt_results["pred_"+name])):
-            pred_f[0] = bdt_results["pred_"+name][i]
-            t.Fill()
-            
-        # Write and close file
-        f.Write()
-        f.Close()
-
     save_BDT_sideband_predictions(filename, bdt_sideband_results, train=False)
     getPearsonDist(bdt_model, bdt_sideband, bdt_sideband_results, real_data, parts=10, ANN=False, sideband=True)
 
@@ -515,39 +419,6 @@ ann_dataset["Y_test"]        = np.hstack( (mass_cat_test,  MVA_test_array[:, [0]
 ann_dataset["weights_train"] = MVA_train_array[:, 1]
 ann_dataset["weights_test"]  = MVA_test_array[:, 1]
 
-
-def save_ANN_dataset(filename, treename, ann_dataset, train):
-    name = ""
-    if train:
-        name = "Y_train"
-    else:
-        name = "Y_test"
-
-    f = TFile(filename, "update")
-    t = TTree(treename, "ann_dataset")
-
-    # Fill variables
-    fill_vars = []
-    for i in range(ann_dataset[name].shape[1]):
-        fill_vars.append(np.zeros(1, dtype=np.float64))
-
-    # Create all branches
-    for j in range(ann_dataset[name].shape[1]):
-        t.Branch("bin"+str(j), fill_vars[j], "bin"+str(j)+"/D")
-
-    # Fill the tree
-    # Outer loop: over all events (inputs)
-    for i in range(ann_dataset[name].shape[0]):
-        # Inner loop: over all input vars
-        for j in range(len(fill_vars)):
-            fill_vars[j][0] = (ann_dataset[name])[i,j]
-        t.Fill()
-    
-    # Write and close file
-    f.Write()
-    f.Close()
-
-
 save_ANN_dataset(filename, "ann_dataset_train", ann_dataset, train=True)
 save_ANN_dataset(filename, "ann_dataset_test", ann_dataset, train=False)
 
@@ -556,7 +427,7 @@ save_ANN_dataset(filename, "ann_dataset_test", ann_dataset, train=False)
 # where miniROC has keys "lamb" (for check), "ann_results", "rho_train", "rho_test"
 megaROC = {}
 #for lamb in [0, 2.0, 10.0]:
-for lamb in [0]:
+for lamb in []:
 
     # set gamma:
     gam = 1.0
@@ -708,33 +579,6 @@ for lamb in [0]:
     # Add mini to mega:
     miniName = "lamb" + str(lamb)
     megaROC[miniName] = miniROC
-
-    def save_ANN_predictions(filename, treename, ann_results, train):
-        name = ""
-        if train:
-            name = "pred_train"
-        else:
-            name = "pred_test"
-
-        f = TFile(filename, "update")
-        t = TTree(treename, "ann_dataset")
-
-        # Fill variables
-        print("\n\n\n ann_results[name] SHAPE: ", ann_results[name].shape)
-        pred_f = np.zeros(1, dtype=np.float64)
-
-        # Create branches
-        t.Branch(name, pred_f, name+"/D")
-
-        # Fill the tree
-        # Outer loop: over all events (inputs)
-        for i in range(ann_results[name].shape[0]):
-            pred_f[0] = ann_results[name][i]
-            t.Fill()
-        
-        # Write and close file
-        f.Write()
-        f.Close()
 
     save_ANN_predictions(filename, "ann_results_pred_train"+"_lamb"+str(lamb), ann_results, train=True)
     save_ANN_predictions(filename, "ann_results_pred_test"+"_lamb"+str(lamb), ann_results, train=False)
