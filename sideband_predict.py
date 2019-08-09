@@ -11,14 +11,18 @@ matplotlib.use("PS")
 import matplotlib.pyplot as plt
 from keras.models import model_from_json
 from ANN import predictANN
-from utils import getPearsonDist
+from utils import getPearsonDist, publishPearson
 
 #################################################
 # 		            SETUP					    #
 #################################################
-lamb=10.0
-weights = "L23/L23-hpc1.h5"
-json_string = "L23/L23-hpc1.json"
+lamb=0
+
+#weights = "L23/L23-hpc1.h5"
+#json_string = "L23/L23-hpc1.json"
+
+json_string = "ANN_lambda0_clpretrain2_adpretrain2_epoch120_minibatch256_mBBbins10_architecture.json"
+weights = "ANN_lambda0_clpretrain2_adpretrain2_epoch120_minibatch256_mBBbins10_model_weights.h5"
 
 #################################################
 # 		     SIDEBAND DATA MANAGEMENT           #
@@ -267,6 +271,8 @@ plt.savefig("median_ann_SIDEBAND_lambda{!s}.png".format(str(lamb)))
 plt.close()
 
 getPearsonDist(model, ann_dataset, ann_results, real_data, lamb=10.0, parts=10, ANN=True, sideband=True)
+percentile_list = [90,95,99,99.9,99.99994]
+publishPearson(test_mass_score_corr, (real_data[real_data[:,0]==0]).shape[0], percentile_list=percentile_list, ANN=True, sideband=True)
 
 
 

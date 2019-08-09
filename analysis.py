@@ -12,7 +12,7 @@ import numpy as np
 from array import array
 from copy import deepcopy
 from bdt import buildBDT, buildBDT_new, predictBDT, predictBDTonSideband
-from utils import overlayed_fig5, getPearsonDist, publishPearson, save_ANN_dataset, save_BDT_predictions, save_MVA_array, save_BDT_sideband_predictions, save_ANN_predictions
+from utils import overlayed_fig5, getPearsonDist, publishPearson, save_ANN_dataset, save_BDT_predictions, save_MVA_array, save_BDT_sideband_predictions, save_ANN_predictions, scatterMassScore
 import matplotlib
 matplotlib.use("PS")
 import matplotlib.pyplot as plt
@@ -119,9 +119,9 @@ for s in ["sherpa", "vbf"]:
 ###
 
 # Creating new variables:
-var_NEW = ["mJJ","pTJJ","asymJJ","pT_balance","dEtaBBJJ/dEtaJJ",
-           "dPhiBBJJ","angleAsymBB","nJets20pt","min(mindRJ1_Ex,10)",
-           "min(mindRJ2_Ex,10)","NTrk500PVJ2"]
+var_NEW = ["mJJ","pTJJ","asymJJ","pT_balance","dEtaBBJJ_div_dEtaJJ",
+           "dPhiBBJJ","angleAsymBB","nJets20pt","min_mindRJ1_Ex_10",
+           "min_mindRJ2_Ex_10","NTrk500PVJ2"]
 mm = ["label", "eventWeight", "mBB"] + var_NEW
 print("using new ANN variables")
 for i in range(0, len(mm)):
@@ -168,9 +168,9 @@ test_index_perm  = np.random.permutation( np.array(range(MVA_test_array.shape[0]
 MVA_train_array  = MVA_train_array[train_index_perm,:]
 MVA_test_array   = MVA_test_array[test_index_perm,:]
 
-# print("\n\n FOR TESTING: Taking only 20 percent of train and test. \n\n")
-# MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.20)]
-# MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.20)]
+# print("\n\n FOR TESTING: Taking only 5 percent of train and test. \n\n")
+# MVA_train_array = MVA_train_array[:int(MVA_train_array.shape[0]*0.05)]
+# MVA_test_array = MVA_test_array[:int(MVA_test_array.shape[0]*0.05)]
 # print("MVA_train_array length = " + str(MVA_train_array.shape[0]))
 # print("MVA_test_array length = " + str(MVA_test_array.shape[0]))
 
@@ -208,7 +208,8 @@ test_mass_score_corr   =  round(pearsonr(bdt_results["pred_test"][MVA_test_array
 getPearsonDist(bdt_model, bdt_dataset, bdt_results, MVA_test_array,parts=10, ANN=False)
 
 # publishPearson stats:
-publishPearson(test_mass_score_corr, MVA_test_array.shape[0], percentile_list=[90,95,99, 99.9], ANN=False, sideband=False)
+percentile_list = [90,95,99,99.9,99.99994]
+publishPearson(test_mass_score_corr, (MVA_test_array[MVA_test_array[:,0]==0]).shape[0], percentile_list=percentile_list, sideband=False)
 
 # scatter mass vs. score
 scatterMassScore(MVA_test_array, bdt_results)
@@ -427,7 +428,7 @@ save_ANN_dataset(filename, "ann_dataset_test", ann_dataset, train=False)
 # where miniROC has keys "lamb" (for check), "ann_results", "rho_train", "rho_test"
 megaROC = {}
 #for lamb in [0, 2.0, 10.0]:
-for lamb in []:
+for lamb in [10.0]:
 
     # set gamma:
     gam = 1.0
@@ -455,6 +456,13 @@ for lamb in []:
     
     # Write Pearson dist to file
     getPearsonDist(model, ann_dataset, ann_results, MVA_test_array, lamb, parts=10, ANN=True)
+
+    # publishPearson stats:
+    publishPearson(test_mass_score_corr, (MVA_test_array[MVA_test_array[:,0]==0]).shape[0], percentile_list=percentile_list, lamb=lamb, sideband=False)
+
+    # scatter mass vs. score
+    scatterMassScore(MVA_test_array, ann_results)
+
 
     ## plot the fig5 curve:
     overlayed_fig5(MVA_train_array, MVA_test_array, ann_results, ANN=True, lamb=lamb)
